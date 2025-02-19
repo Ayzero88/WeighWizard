@@ -5,10 +5,7 @@ import DashBoard from './dashboard/DashBoard';
 
 
 
-const Home = () => {
-    const [homeComponent, setHomeComponent] = useState({
-        showDashBoard: false,
-    });
+const Home = ({homeComponent, setHomeComponent, content, setContent}) => {
 
     const year = new Date().getFullYear();
     const handleShowDashBoard = () => {
@@ -28,7 +25,11 @@ const Home = () => {
             
         </div>}
         { homeComponent.showDashBoard &&
-            <DashBoard setHomeComponent={setHomeComponent} />
+            <DashBoard 
+                setHomeComponent={setHomeComponent} 
+                content={content}
+                setContent={setContent} 
+            />
         }
     </>
   )

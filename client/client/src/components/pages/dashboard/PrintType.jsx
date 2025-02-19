@@ -10,6 +10,19 @@ const PrintType = () => {
         straight: false,
     });
 
+    const [owner, setOwner] = useState({
+        owner_name: '',
+        file: '',
+    });
+
+    const handleInputChange = (event) => {
+        const {name, value} = event.target;
+        setOwner(prev=>({
+            ...prev,
+            [name]: value
+        }));
+    };
+
     const handleStandardChoice = ()=>{
         setIsToggle({...isToggle, standard:!isToggle.standard, straight: false });
     };
@@ -68,6 +81,15 @@ const PrintType = () => {
         <div>
             <p> <FaCircle/> Straight Weight Capture</p>
             <img onClick={handleStraightChoice} src={isToggle.straight ? toggleOn : toggleOff } alt="toggle button" width="35rem"/>
+        </div>
+
+        <div className='owner'>
+            <input type='text' placeholder="Owner's Name" name='owner_name' value={owner.owner_name} onChange={handleInputChange}/>
+            
+        </div>
+
+        <div className='logo'>
+            <input  type="file"  name="file" className="" value={owner.file} onChange={handleInputChange}/>
         </div>
 
         <div>

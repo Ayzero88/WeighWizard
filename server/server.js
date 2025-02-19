@@ -72,7 +72,8 @@ const db = new pg.Client({
     port: process.env.PG_PORT,
 });
 
-db.connect().then(() => console.log('Connected to DB')).catch(err => console.error('Database connection error:', err));
+db.connect()
+// .then(() => console.log('Connected to DB')).catch(err => console.error('Database connection error:', err));
 
 // 
 const checkDB = async(tableName, query)=>{
@@ -124,6 +125,18 @@ app.get('/print-type-param', async(req, res)=>{
         };
     } catch (error) {
         res.status(500).json({ error: "No print type configuration saved" });
+    };
+});
+
+app.get('/transactions', async(req, res)=>{
+
+    try {
+        const result = await db.query('SELECT * FROM transact WHERE last_weight IS NULL AND net_weight IS NULL');
+        const totalResult = await db.query('SELECT COUNT(*) AS total FROM transact');
+        const totalTransactions = parseInt(totalResult.rows[0].total);
+        res.json({result: result.rows, numOfTransactions: totalTransactions});
+    } catch (error) {
+        res.status(500).json({ message: 'Error getting transactions'});
     };
 });
 
@@ -195,6 +208,21 @@ app.post('/transactions', async(req, res)=>{
         res.status(500).json({ message: 'Error updating weigh transaction'});
         console.error('Error updating weigh transaction:', error);
     }; 
+});
+
+app.post('/complete_transaction', async(req, res) =>{
+    try {
+        const { tid, last_weight, net_weight } = req.body;
+
+        if(!tid ||!last_weight ||!net_weight){
+            return res.status(400).json({ message: 'Missing required parameters' });
+        };
+        await db.query('UPDATE transact SET last_weight=$1, net_weight=$2 WHERE tid=$3', [last_weight, net_weight, tid]);
+        res.status(200).json({ message: `Transaction with Id: ${tid } was completed successfully`});
+    } catch (error) {
+        res.status(500).json({ message: 'Error in completing transaction'});
+        console.error('Error marking transaction as finished:', error);
+    };
 });
 app.listen(PORT, ()=>{
     console.log(`Server is running on port ${PORT}`);

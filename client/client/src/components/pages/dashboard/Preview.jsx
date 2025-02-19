@@ -1,14 +1,23 @@
 import React, { useState } from 'react'
-import { FaPen, FaPrint, FaSave, FaSignature, FaUser, FaWeight } from 'react-icons/fa'
+import { FaBarcode, FaCar, FaCartPlus, FaClock, FaCog, FaHardHat, FaIdBadge, FaLandmark, FaMapMarked, FaPen, FaPhone, FaPrint, FaProductHunt, FaSave, FaSignature, FaTimes, FaUser, FaUserAlt, FaWeight, FaWeightHanging } from 'react-icons/fa'
 import ToPdf2 from '../../reuse/ToPdf2';
 import DateTimeString from '../../reuse/DateTimeString';
 
 
-const Preview = ({setShowExp, setShowPreview, capturedParams, ticketField, isToggle, setCapturedParams, setTicketField}) => {
+const Preview = ({
+        setShowExp, setShowPreview, capturedParams, ticketField, isToggle, setCapturedParams, 
+        setTicketField, setShowCap, isPending, setIsPending, handleFetchTransactions}) => {
     const [showPrint, setShowPrint] = useState(false);
 
     const handleSave = async(e) =>{
         e.preventDefault();
+        if(isToggle.standard && !capturedParams.istCap){
+            alert("Eror: No weight data captured.");
+            return;
+        }else if(isToggle.straight && !capturedParams.grossCap){
+            alert("Error: No weight data captured.");
+            return;
+        };
         try {
             const transaction = {weighData: capturedParams, clientData: ticketField, ops_type:isToggle.standard ? "Standard" : 'Straight' };
             const response = await fetch('http://localhost:5000/transactions', {
@@ -22,20 +31,61 @@ const Preview = ({setShowExp, setShowPreview, capturedParams, ticketField, isTog
             };
 
             const data = await response.json();
-            alert(`Response: ${data.message || 'No message received'}`);
+            alert(`${data.message || 'No message received'}`);
             setShowPrint(true);
             
         } catch (error) {
             console.error("Failed to send transaction details.");
             alert(`Failed to save transaction Details. Check that TID has not been used before. `);     
+        }
+      
+    };
+
+    const handleComplete = async() =>{
+        if(!ticketField.tid || !capturedParams.secCap || ! capturedParams.netCap){
+            alert('Error. The second weight value is needed to complete this transaction.');
+            return;
+        };
+        //complete_transaction
+        const transaction = {
+            tid: ticketField.tid,
+            last_weight: capturedParams.secCap ,
+            net_weight: capturedParams.netCap
         };
 
-      
+        try {
+            const response = await fetch('http://localhost:5000/complete_transaction' , {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(transaction)
+            });
+
+            if(!response.ok){
+                throw new Error('Failed to complete transaction:', response.status);
+            };
+
+            const data = await response.json();
+            alert(`Response: ${data.message || 'No message received'}`);
+            setShowPrint(true);
+            setIsPending(false);
+        } catch (error) {
+            console.error("Failed to complete transaction.");
+            alert(`Failed to complete transaction. Please check TID and weights.`);
+        };
     };
 
     const handleEdit = () => {
         setShowPreview(false);
         setShowExp(true);
+    };
+
+    const handleExit = ()=>{
+        setTicketField({unit: ticketField.unit});
+        setCapturedParams({});
+        setShowPreview(false);
+        setShowExp(true);
+        setShowCap(true);
+        handleFetchTransactions();
     };
 
     const handlePrint = () => {
@@ -47,10 +97,9 @@ const Preview = ({setShowExp, setShowPreview, capturedParams, ticketField, isTog
                 if (newWindow) {
                     const pdfUrl = URL.createObjectURL(new Blob([pdfData], { type: 'application/pdf' }));
                     newWindow.location.href = pdfUrl;
-                      setTicketField({});
-                      setCapturedParams({});
-                      setShowPreview(false);
-                      setShowExp(true);
+                    setIsPending(false);
+                    handleFetchTransactions();
+                    handleExit();
                 } else {
                     console.error('Unable to open new window to display PDF.');
                 }
@@ -65,8 +114,8 @@ const Preview = ({setShowExp, setShowPreview, capturedParams, ticketField, isTog
   return (
     <div className='ticket-wrap'>
          <div className='ticket-btn-wrap'>
-           {!showPrint && <button className='btn-a' onClick={handleSave}>
-                <FaSave/> Save
+           {!showPrint && <button className='btn-a' onClick={isPending ? handleComplete : handleSave}>
+                <FaSave/> {isPending ? "Finish" : "Save"}
             </button>}
            {!showPrint && <button className='btn-b' onClick={handleEdit}>
                 <FaPen/> Edit
@@ -74,6 +123,10 @@ const Preview = ({setShowExp, setShowPreview, capturedParams, ticketField, isTog
          
            { showPrint && <button className='btn-c' onClick={handlePrint}>
                 <FaPrint/> Print
+            </button>}
+
+            { (!isPending && showPrint) && <button className='btn-d' onClick={handleExit}>
+                <FaTimes/> Exit
             </button>}
         </div>
         <div className='ticket' id='ticket'>
@@ -88,42 +141,42 @@ const Preview = ({setShowExp, setShowPreview, capturedParams, ticketField, isTog
 
                             {ticketField.tid && 
                             <tr>
-                                    <td className='td'>Transaction Id:</td>
+                                    <td className='td'><FaIdBadge color='gray'/> Transaction Id:</td>
                                     <td>{ticketField.tid}</td>
                                 </tr>}
                                 {ticketField.client &&   
                                 <tr>
-                                    <td className='td'>Client Name:</td>
+                                    <td className='td'> <FaUserAlt color='gray'/> Client Name:</td>
                                     <td>{ticketField.client}</td>
                                 </tr>}
                             {ticketField.address && 
                             <tr>
-                                    <td className='td'>Address:</td>
+                                    <td className='td'> <FaLandmark color='gray'/> Address:</td>
                                     <td>{ticketField.address}</td>
                                 </tr>}
                             {ticketField.tel && 
                             <tr>
-                                    <td className='td'>Telephone:</td>
+                                    <td className='td'> <FaPhone color='gray'/> Telephone:</td>
                                     <td>{ticketField.tel}</td>
                                 </tr>}
-                                {ticketField.email && 
+                                {ticketField.vehicleNo && 
                                 <tr>
-                                    <td className='td'>Vehicle Number:</td>
+                                    <td className='td'> <FaCar color='gray'/> Vehicle Number:</td>
                                     <td>{ticketField.vehicleNo}</td>
                                 </tr>}
                             {ticketField.dest &&
                                 <tr>
-                                    <td className='td'>Destination:</td>
+                                    <td className='td'><FaMapMarked color='gray'/> Destination:</td>
                                     <td>{ticketField.dest}</td>
                                 </tr>}
                                 {ticketField.product && 
                                 <tr>
-                                    <td className='td'>Product:</td>
+                                    <td className='td'> <FaProductHunt color='gray'/> Product:</td>
                                     <td>{ticketField.product}</td>
                                 </tr>}
                                 {ticketField.carrier && 
                                 <tr>
-                                    <td className='td'>Carrier:</td>
+                                    <td className='td'> <FaCartPlus color='gray'/>Carrier:</td>
                                     <td>{ticketField.carrier}</td>
                                 </tr>}
                             </tbody>
@@ -136,15 +189,15 @@ const Preview = ({setShowExp, setShowPreview, capturedParams, ticketField, isTog
                     <div className='content-container'>
                         <div>
                         
-                        {ticketField.batchNo &&  <p><span> Batch Number:</span> {ticketField.batchNo}</p>}
-                            <p><span> Weigh Operation:</span> {isToggle.standard ? "Standard" : 'Straight'}</p>
+                        {ticketField.batchNo &&  <p><span> <FaBarcode color='gray'/> Batch Number:</span> {ticketField.batchNo}</p>}
+                            <p><span> <FaWeight color='gray'/> Weigh Operation:</span> {isToggle.standard ? "Standard" : 'Straight'}</p>
                         </div>
                         <table className='table2'>
                             <thead>
                                 <tr>
-                                    <th className='td'>Operation</th>
-                                    <th className='td'>Weight</th>
-                                    <th className='td'>Date</th>
+                                    <th className='td'><FaCog color='gray'/> Operation</th>
+                                    <th className='td'><FaWeightHanging color='gray'/> Weight</th>
+                                    <th className='td'><FaClock color='gray'/> Date/Time</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -189,14 +242,14 @@ const Preview = ({setShowExp, setShowPreview, capturedParams, ticketField, isTog
                     <div className='content-container'>
                         <table className='table1'>
                             <tbody>
-                                <tr>
-                                    <td className='td'>Operator Name:</td>
+                                <tr style={{height: '4rem'}}>
+                                    <td className='td'><FaHardHat color='gray'/> Operator Name:</td>
                                     <td>Sign: </td>
                                     <td>Date: </td>
 
                                 </tr>
                                 <tr>
-                                    <td className='td'>Carrier Name:</td>
+                                    <td className='td' style={{height: '4rem'}}> <FaCartPlus color='gray'/> Carrier Name:</td>
                                     <td>Sign: </td>
                                     <td>Date: </td>
 

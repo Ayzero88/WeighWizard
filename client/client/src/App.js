@@ -2,11 +2,30 @@ import React, { useState } from "react";
 import Home from "./components/pages/Home";
 
 const App = () => {
+// components
+ const [homeComponent, setHomeComponent] = useState({
+        showDashBoard: false,
+    });
 
+   const [content, setContent] = useState({
+          home: true,
+          linkDB: false,
+          linkScale: false,
+          updateScaleParams: false,
+          printType: false,
+          test: false,
+          capture: false,
+          service: false,
+      });
 
   return(
       <div>
-          <Home/>
+          <Home    
+              homeComponent={homeComponent}
+              setHomeComponent={setHomeComponent}
+              content={content}
+              setContent={setContent}
+          />
       </div>
 
   )

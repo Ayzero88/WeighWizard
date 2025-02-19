@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaDatabase, FaWeight, FaDashcube,FaLink, FaCamera, FaHome, FaTimes, FaArrowUp, FaPrint } from 'react-icons/fa';
+import { FaDatabase, FaWeight, FaDashcube,FaLink, FaCamera, FaHome, FaTimes, FaArrowUp, FaPrint, FaCog } from 'react-icons/fa';
 import cableImage from '../../asset/UI/connects.svg';
 import { FiArrowLeft, FiArrowRight} from 'react-icons/fi';
 import DataBaseConfig from './DataBaseConfig';
@@ -10,19 +10,10 @@ import Logo from '../../reuse/Logo';
 import UpdateScaleConfig from './UpdateScaleConfig';
 import Capture from './Capture';
 import PrintType from './PrintType';
+import Service from './Service';
 
 
-const DashBoard = ({setHomeComponent}) => {
-    const [content, setContent] = useState({
-        home: true,
-        linkDB: false,
-        linkScale: false,
-        updateScaleParams: false,
-        printType: false,
-        test: false,
-        capture: false,
-    });
-
+const DashBoard = ({setHomeComponent, content, setContent}) => {
     const [showDashBoard, setShowDashBoard] = useState(true);
     const [showExp, setShowExp] = useState(true);
     const handleDashToggle = ()=>{
@@ -52,6 +43,9 @@ const DashBoard = ({setHomeComponent}) => {
             case 6:
                 setContent({capture: true});
                 break;
+            case 7:
+                    setContent({service: true});
+                    break;
             default:
                 setContent({home: true});
                 break;
@@ -78,7 +72,8 @@ const DashBoard = ({setHomeComponent}) => {
                             <li onClick={()=>handleContents(4)}> <FaPrint color='#fff'/> Weigh Operation</li>
                             <li onClick={()=>handleContents(5)}> <FaLink color='#fff'/> Test Scale Connection </li>
                             <li onClick={()=>handleContents(6)}> <FaCamera color='#fff'/> Capture Weight</li>
-                        
+                            <li onClick={()=>handleContents(7)}> <FaCog color='#fff'/> Service Center</li>
+                    
                     </ul>
                     <Logo fs='1rem' imgWt='30rem'/>
             </div>
@@ -116,11 +111,13 @@ const DashBoard = ({setHomeComponent}) => {
                 <Capture setShowDashBoard={setShowDashBoard} setShowExp={setShowExp} />
             }
 
+            {content.service && <Service/>} 
+
             <div className='nav'>
                  <ul>
                     {showExp && <li onClick={handleDashToggle}>{showDashBoard ? <FiArrowLeft size={20} color='#b08d57'/> : <FiArrowRight size={20} color='#b08d57'/> }</li>}
-                        <li onClick={()=>setHomeComponent({showCapture: true})}><FaCamera size={20} color='gray'/></li>
-                        <li onClick={()=>setHomeComponent({showCapture: false, showDashBoard: false})}><FaHome size={20} color='gray'/></li>
+                        {!content.capture && <li onClick={()=>setContent({capture: true})}><FaCamera size={20} color='gray'/></li>}
+                        <li onClick={()=>setHomeComponent({showDashBoard: false})}><FaHome size={20} color='gray'/></li>
                  </ul>
             </div>
 

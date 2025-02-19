@@ -36,7 +36,13 @@ create table scale_params (
 
 create table print_type (
 	id int,
-	ptype text
+	ptype text,
+	owner text,
+	logo bytea
+);
+
+create table tid (
+	transact_id numeric
 );
 
 

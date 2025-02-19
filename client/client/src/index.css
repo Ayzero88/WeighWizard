@@ -212,6 +212,7 @@ button {
 form input {
   outline: none;
   padding: 0.5rem;
+  border: 1px solid #ccc;
   border-radius: 5px;
 }
 
@@ -287,6 +288,29 @@ form .submit:hover {
   width: 8rem;
   cursor: pointer;
   transition: background-color 0.1s ease;
+}
+
+.owner{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+ 
+}
+
+.owner input {
+  padding: 0.3rem;
+  outline: none;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.logo{
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     border: 1px solid #ccc;
+     border-radius: 5px;
 }
 
 .print-type-wrap div button:hover {
@@ -461,7 +485,7 @@ select {
 
 .save-btn {
    display: flex;
-   justify-content: flex-end;
+   justify-content: space-between;
    width: 100%;
 }
 
@@ -605,7 +629,12 @@ select {
   background-color: #1b2823;
 }
 
+.btn-d {
+  background-color: darkred;
+}
+
 .searchBox {
+  position: relative;
   display: flex;
   gap: 1rem;
   align-items: center;
@@ -623,6 +652,30 @@ select {
   outline: none;
   border: none;
   border: 5px;
+}
+
+.display-items{
+  position: absolute;
+  top: 2.2rem;
+  left: 0;
+  background-color: #1b2823;
+  color: white;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.display-items ul {
+  list-style: none;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.display-items ul li {
+  display: flex;
+  gap: 0.5rem;
+  cursor: pointer;
 }
 
 .searchBox button {
@@ -650,8 +703,8 @@ select {
   display: flex;
   justify-content: space-between;
   border: 1px solid #ccc;
-  padding: 0.2rem;
-  border-radius: 3px;
+  padding: 0.4rem;
+  border-radius: 5px;
   background-color: #1b2823;
   color: aliceblue;
 
