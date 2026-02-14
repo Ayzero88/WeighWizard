@@ -1,0 +1,46 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# --- Maven Wrapper (Allow the necessary JAR) ---
+!**/server-java/weighwiz-backend/.mvn/wrapper/maven-wrapper.jar
+
+# --- Ignore general Maven/Java build artifacts ---
+**/target/
+**/build/
+*.class
+*.log
+
+# --- Sensitive configuration (Optional but Recommended) ---
+**/server-java/weighwiz-backend/src/main/resources/application-local.yml
+**/server-java/weighwiz-backend/src/main/resources/application-dev.yml
