@@ -73,12 +73,12 @@ const ScaleConfig = () => {
             </div>
         
          <form>
-            <input type='text' onChange={handleInputChange} value={scaleParams.port} placeholder='Port' name='port'  autoComplete='off'/>
-           <input type='number' onChange={handleInputChange} value={scaleParams.baudRate} placeholder='Baud Rate' name='baudRate' autoComplete='off'/>
-           <input type='number' onChange={handleInputChange} value={parseInt(scaleParams.databits)} placeholder='Databits' name='databits' autoComplete='off'/>
-           <input type='number' onChange={handleInputChange} value={parseInt(scaleParams.stopbits)} placeholder='Stopbits' name='stopbits' autoComplete='off'/>
-           <input type='text' onChange={handleInputChange} value={scaleParams.parity} placeholder='Parity' name='parity' autoComplete='off'/>
-           <input type='text' onChange={handleInputChange} value={scaleParams.flowControl} placeholder='Flow Control' name='flowControl' autoComplete='off'/>
+            <input type='text' onChange={handleInputChange} value={scaleParams.port ?? ''} placeholder='Port' name='port'  autoComplete='off'/>
+           <input type='number' onChange={handleInputChange} value={scaleParams.baudRate ?? ''} placeholder='Baud Rate' name='baudRate' autoComplete='off'/>
+           <input type='number' onChange={handleInputChange} value={parseInt(scaleParams.databits) ?? ''} placeholder='Databits' name='databits' autoComplete='off'/>
+           <input type='number' onChange={handleInputChange} value={parseInt(scaleParams.stopbits) ?? ''} placeholder='Stopbits' name='stopbits' autoComplete='off'/>
+           <input type='text' onChange={handleInputChange} value={scaleParams.parity ?? ''} placeholder='Parity' name='parity' autoComplete='off'/>
+           <input type='text' onChange={handleInputChange} value={scaleParams.flowControl ?? ''} placeholder='Flow Control' name='flowControl' autoComplete='off'/>
            {(status !== 'saved') && <input className='submit' type='submit' onClick={handleSet} value="Save Parameter"/>}
            
          </form>

@@ -280,7 +280,8 @@ form .submit:hover {
   cursor: pointer;
 }
 
-.print-type-wrap div button {
+.print-type-wrap div button,
+.backup-wrap button {
   background-color: #b08d57;
   color: #fff;
   border: none;
@@ -906,6 +907,46 @@ select {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+}
+
+.backup-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  height: 30rem;
+  width: 100%;
+
+}
+
+.backup-wrap ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.backup-wrap ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 5px;
+}
+
+.backup-exit {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
 }
 
 @media(max-width: 600px){

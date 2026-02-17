@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaFilter, FaTimes, FaSearch } from 'react-icons/fa';
+import { FaFilter, FaTimes, FaSearch, FaDatabase } from 'react-icons/fa';
 import TTable from '../../reuse/TTable';
 import { FaFileExport } from 'react-icons/fa';
 import { FaBrush } from 'react-icons/fa';
@@ -10,6 +10,7 @@ import EditTran from './EditTran';
 import DateRanger from '../../reuse/DateRanger';
 import ToPdf2 from '../../reuse/ToPdf2';
 import axios from 'axios';
+import Backup from './Backup';
 
 
 const Service = () => {
@@ -21,6 +22,7 @@ const Service = () => {
        printPreview: false,
        editForm: false,
     });
+    const [showBackUp, setShowBackUp] = useState(false);
     const [showAdvance, setShowAdvance] =  useState(false);
     const [capturedParams, setCapturedParams] =  useState({});
     const [ticketField, setTicketField] =  useState({});
@@ -161,36 +163,46 @@ const Service = () => {
     }
     };
 
+    const handleShowBackUp = () =>{
+        setShowBackUp(prev=>!prev);
+    };
 
+    
 
   return (
-    <div  className='service'>
-        {(showAdvance && showDetails.table) &&  <h4> <FaFilter/> Filter by Dates [ Start, End ]</h4>}
-       <div className='search'>
-           {(!showAdvance && showDetails.table) &&  <input type='text' placeholder='Find Transactions (TID, Vehicle No, Company Name)' name='search' value={search} onChange={(e)=>setSearch(e.target.value)}/>}
-           
-            {(showAdvance && showDetails.table ) && <DateRanger setTransactions={setTransactions} />}
+    <>
+       {showBackUp && <Backup setShowBackUp={setShowBackUp} />}
+       {!showBackUp && <div  className='service'>
+            {(showAdvance && showDetails.table) &&  <h4> <FaFilter/> Filter by Dates [ Start, End ]</h4>}
+        <div className='search'>
+            {(!showAdvance && showDetails.table) &&  <input type='text' placeholder='Find Transactions (TID, Vehicle No, Company Name)' name='search' value={search} onChange={(e)=>setSearch(e.target.value)}/>}
+            
+                {(showAdvance && showDetails.table ) && <DateRanger setTransactions={setTransactions} />}
 
-                {(!showAdvance && showDetails.table) && <button onClick={handleSearchTransactions}> <FaSearch size={17}/> </button>}
-                {showDetails.table && <button onClick={handleShowAdvance}>{showAdvance ? <FaTimes color='red' size={17}/> : <FaFilter color='gray' size={17} />}</button>}
-                {showDetails.table && <button onClick={handleExport}>{<FaFileExport color="green" size={17}/>}</button>}
-                {(showDetails.table && transactions && transactions.length > 0 ) && <button onClick={clearTable}>{<FaBrush color="darkred" size={17}/>}</button>}
-                {(showDetails.printPreview) && <button onClick={handleExit}>{<FaArrowLeft color="black" size={17}/>}</button>}
-                {(showDetails.printPreview) && <button onClick={handlePrint}>{<FaPrint color="black" size={17}/>}</button>}
-       </div>
+                    {(!showAdvance && showDetails.table) && <button onClick={handleSearchTransactions}> <FaSearch size={17}/> </button>}
+                    {showDetails.table && <button onClick={handleShowAdvance}>{showAdvance ? <FaTimes color='red' size={17}/> : <FaFilter color='gray' size={17} />}</button>}
+                    {showDetails.table && <button onClick={handleExport}>{<FaFileExport color="green" size={17}/>}</button>}
+                    {(showDetails.table && transactions && transactions.length > 0 ) && <button onClick={clearTable}>{<FaBrush color="darkred" size={17}/>}</button>}
+                    {(showDetails.printPreview) && <button onClick={handleExit}>{<FaArrowLeft color="black" size={17}/>}</button>}
+                    {(showDetails.printPreview) && <button onClick={handlePrint}>{<FaPrint color="black" size={17}/>}</button>}
+                    <button onClick={handleShowBackUp}> <FaDatabase color='blue' size={17}/> </button>
+                    
 
-      {showDetails.table && 
-      <div className='result'>
-             {(transactions && transactions.length > 0) ? <TTable transactions={transactions} viewTransaction={viewTransaction} handleEdit={handleEdit} handleDelete={handleDelete} /> : <p style={{color: "gray"}}>Find transactions ... </p>}    
-       </div>}
-       {showDetails.printPreview && <DisplayT capturedParams={capturedParams}  ticketField={ticketField}/>}
+        </div>
 
-       {showDetails.editForm && 
-       <div className='edit-wrap'>
-        <div className='exit'><p>TID: {transaction.tid}</p><FaTimes onClick={()=>setDetails({table: true})} color='red' /></div>
-          <EditTran  transaction={transaction} handleExit={handleExit}/>
-       </div>}
-    </div>
+        {showDetails.table && 
+        <div className='result'>
+                {(transactions && transactions.length > 0) ? <TTable transactions={transactions} viewTransaction={viewTransaction} handleEdit={handleEdit} handleDelete={handleDelete} /> : <p style={{color: "gray"}}>Find transactions ... </p>}    
+        </div>}
+        {showDetails.printPreview && <DisplayT capturedParams={capturedParams}  ticketField={ticketField}/>}
+
+        {showDetails.editForm && 
+        <div className='edit-wrap'>
+            <div className='exit'><p>TID: {transaction.tid}</p><FaTimes onClick={()=>setDetails({table: true})} color='red' /></div>
+            <EditTran  transaction={transaction} handleExit={handleExit}/>
+        </div>}
+        </div>}
+    </>
   )
 }
 

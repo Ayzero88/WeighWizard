@@ -116,8 +116,6 @@ const PrintType = () => {
             logo: owner.file   // Base64 string
         });
     };
-
-    console.log(isToggle.editTid);
     
    // Save print type to database
     const handleSave = async (e) => {

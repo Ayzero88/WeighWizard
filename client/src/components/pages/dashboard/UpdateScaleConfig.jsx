@@ -78,12 +78,12 @@ useEffect(() => {
       <div className='db-wrap'> 
           <h2><FaArrowUp color='gray'/> Update Scale Parameters</h2>
           <form>
-             <input type='text' onChange={handleInputChange} value={scaleParams.port} placeholder='Port' name='port'  autoComplete='off'/>
-            <input type='number' onChange={handleInputChange} value={scaleParams.baudRate} placeholder='Baud Rate' name='baudRate' autoComplete='off'/>
-            <input type='number' onChange={handleInputChange} value={parseInt(scaleParams.databits)} placeholder='DataBits' name='databits' autoComplete='off'/>
-            <input type='number' onChange={handleInputChange} value={parseInt(scaleParams.stopbits)} placeholder='StopBits' name='stopbits' autoComplete='off'/>
-            <input type='text' onChange={handleInputChange} value={scaleParams.parity} placeholder='Parity' name='parity' autoComplete='off'/>
-            <input type='text' onChange={handleInputChange} value={scaleParams.flowControl} placeholder='Flow Control' name='flowControl' autoComplete='off'/>
+             <input type='text' onChange={handleInputChange} value={scaleParams.port ?? ''} placeholder='Port' name='port'  autoComplete='off'/>
+            <input type='number' onChange={handleInputChange} value={scaleParams.baudRate ?? ''} placeholder='Baud Rate' name='baudRate' autoComplete='off'/>
+            <input type='number' onChange={handleInputChange} value={parseInt(scaleParams.databits) ?? ''} placeholder='DataBits' name='databits' autoComplete='off'/>
+            <input type='number' onChange={handleInputChange} value={parseInt(scaleParams.stopbits) ?? ''} placeholder='StopBits' name='stopbits' autoComplete='off'/>
+            <input type='text' onChange={handleInputChange} value={scaleParams.parity ?? ''} placeholder='Parity' name='parity' autoComplete='off'/>
+            <input type='text' onChange={handleInputChange} value={scaleParams.flowControl ?? ''} placeholder='Flow Control' name='flowControl' autoComplete='off'/>
             <input className='submit' type='submit' onClick={handleUpdate} value="Update Parameter"/>
             
           </form>
