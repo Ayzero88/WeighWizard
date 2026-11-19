@@ -2,7 +2,7 @@ import React from 'react';
 import {FaCircle, FaEye, FaTrash, FaPenFancy} from "react-icons/fa";
 import FormatDateTime from './FormatDateTime';
 
-const TTable = ({user, transactions, viewTransaction, handleEdit, handleDelete}) => {
+const TTable = ({user, transactions, viewTransaction, handleEdit, handleDelete, canEdit, canDelete}) => {
   
   return (
     <table className='table2'>
@@ -40,8 +40,8 @@ const TTable = ({user, transactions, viewTransaction, handleEdit, handleDelete})
                                 <td >
                                     <div style={{display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: "center"}}>
                                         <FaEye cursor="pointer" color='#007BFF'  onClick={()=>viewTransaction(transact.tid)}/>
-                                        {["superadmin", "admin"].includes(user?.role) && <FaPenFancy cursor="pointer" color='gray'  onClick={()=>handleEdit(transact.tid)}/>}
-                                        {["superadmin", "admin"].includes(user?.role) && <FaTrash cursor="pointer" color='red' onClick={()=>handleDelete(transact.tid)}/>}
+                                        {canEdit && <FaPenFancy cursor="pointer" color='gray'  onClick={()=>handleEdit(transact.tid)}/>}
+                                        {canDelete && <FaTrash cursor="pointer" color='red' onClick={()=>handleDelete(transact.tid)}/>}
                                     </div>
                                     
                                 </td>

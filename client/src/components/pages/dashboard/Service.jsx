@@ -230,7 +230,7 @@ const Service = ({showAlert, showConfirmAlert, user, gate2Enabled}) => {
         }
         setIsLoading4(false);
     }
- };
+    };
 
     const handleExportDelTransaction = async () => {
         try {
