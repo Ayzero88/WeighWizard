@@ -65,6 +65,13 @@ public class TransactionController {
     // 2️⃣ Create new transaction
     @PostMapping
     public Transaction createTransaction(@RequestBody Transaction tx) {
+        // TID: typed when the operator edits it, otherwise the server assigns the next sequence number
+        String tid = tx.getTid();
+        if (tid == null || tid.isBlank()) {
+            tx.setTid(String.format("%06d", repo.nextTidValue()));
+        } else if (tid.matches("\\d+")) {
+            tx.setTid(String.format("%06d", Long.parseLong(tid)));
+        }
         if (repo.existsById(tx.getTid())) {
             logger.warn("Transaction already exists: {}", tx.getTid());
             throw new ResponseStatusException(
