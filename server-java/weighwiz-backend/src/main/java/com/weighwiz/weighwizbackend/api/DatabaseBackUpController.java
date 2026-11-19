@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.weighwiz.weighwizbackend.db.DatabaseBackUpService;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -17,22 +19,26 @@ public class DatabaseBackUpController {
 
 
 @PostMapping("/full-backup")
+@PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
 public String backupFullDatabase() throws IOException, InterruptedException {
     return backupService.backupFullDatabase();
 }
 
 @PostMapping("/full-restore")
+@PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
 public String restoreFullDatabase(@RequestParam String filePath) throws IOException, InterruptedException {
     backupService.restoreFullDatabase(filePath);
     return "Full database restored from: " + filePath;
 }
 
 @GetMapping("/full-backups")
+@PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
 public List<String> getFullBackups() {
     return backupService.getFullBackupFiles();
 }
 
 @GetMapping("/full-backups-by-month")
+@PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
 public List<String> getFullBackupsByMonth(
         @RequestParam(required = false) String month) {
 
