@@ -37,10 +37,10 @@ const Login = ({showAlert, homeComponent, setHomeComponent, handleSaveSession, c
             });
           
             const res = response?.data;
-            if(res){
-                setUser(res);
-                const stringifyRes = JSON.stringify(res);
-                const userProfile = localStorage.setItem("up", stringifyRes);
+            if(res?.token && res?.user){
+                localStorage.setItem("wt", res.token);
+                setUser(res.user);
+                localStorage.setItem("up", JSON.stringify(res.user));
                 handleShowDashBoard();
                 setIsLoading(false);
             }else{
