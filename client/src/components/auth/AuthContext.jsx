@@ -9,7 +9,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Try to restore user from localStorage on app start
     const storedUser = localStorage.getItem("up");
-    if (storedUser) {
+    const storedToken = localStorage.getItem("wt");
+    if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
     }
     setLoading(false); // done checking localStorage
