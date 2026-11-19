@@ -102,6 +102,7 @@ public class DatabaseInitService {
         """);
         jdbc.execute("""
             DO $$
+            BEGIN
                 IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'tid_seq' AND relkind = 'S') THEN
                     CREATE SEQUENCE tid_seq;
                     PERFORM setval('tid_seq', COALESCE((SELECT MAX(t) FROM (
