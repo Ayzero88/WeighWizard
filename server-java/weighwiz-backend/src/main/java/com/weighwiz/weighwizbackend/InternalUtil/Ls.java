@@ -151,7 +151,7 @@ private boolean checkLicense() {
     }
 
 
-    private void g(Ld data) throws Exception {
+    private synchronized void g(Ld data) throws Exception {
         String json = objectMapper.writeValueAsString(data);
         String encrypted = Au.encrypt(json);
 
@@ -166,7 +166,7 @@ private boolean checkLicense() {
         }
     }
 
-    private Ld h() throws Exception {
+    private synchronized Ld h() throws Exception {
         String encrypted = Files.readString(Path.of(b));
         String json = Au.decrypt(encrypted);
         return objectMapper.readValue(json, Ld.class);
@@ -174,6 +174,7 @@ private boolean checkLicense() {
 
 
     public void i() throws IOException {
+        cachedValid = false;
             Path folderPath = Path.of(a);
 
             if (Files.exists(folderPath)) {
@@ -211,6 +212,7 @@ private boolean checkLicense() {
     }
 
     public void l() throws IOException {
+        cachedValid = false;
         Path m = Path.of(b);
         if (Files.exists(m)) Files.delete(m);
         logger.info("Lx deleted.");
