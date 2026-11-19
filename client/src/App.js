@@ -1,3 +1,4 @@
+import './components/reuse/authAxios.js';
 import React, { useCallback, useEffect, useState } from "react";
 import Home from "./components/pages/Home";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
