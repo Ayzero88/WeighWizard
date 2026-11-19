@@ -7,6 +7,7 @@ import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.weighwiz.weighwizbackend.db.ScaleParamService;
 import com.weighwiz.weighwizbackend.db.ScaleParamRepository;
@@ -39,6 +40,7 @@ public class ScaleParamController {
     // 'enabled' is deliberately NOT accepted here: it is the paid-feature flag for the
     // second scale and may only be changed directly in the database.
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
     public Map<String, Object> update(
         @PathVariable Long id,
         @RequestBody ScaleParamService sp
