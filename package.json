@@ -1,0 +1,60 @@
+{
+  "name": "weighwiz",
+  "version": "1.0.0",
+  "description": "WeighWiz Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com"
+  },
+  "keywords": [],
+  "author": "Ayzeroxa Technologies",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^40.6.1",
+    "electron-builder": "^24.13.3"
+  },
+ "build": {
+  "appId": "com.ayzeroxa.weighwiz",
+  "productName": "WeighWiz",
+  "files": [
+    "main.js",
+    "preload.js",
+    "assets/**/*"
+  ],
+  "extraResources": [
+  {
+    "from": "server-java/weighwiz-backend/target/weighwiz-server.jar",
+    "to": "backend.jar"
+  },
+  {
+    "from": "jre",
+    "to": "jre",
+    "filter": ["**/*"]
+  },
+  {
+      "from": "jsc_dll/",
+      "to": "jsc_dll/",
+      "filter": ["**/*"]
+    },
+
+     {
+    "from": "build/icons/",
+    "to": "icons/"
+  }
+],
+  "win": {
+    "target": "nsis",
+    "icon": "build/icons/win/icon.ico"
+  }
+},
+  "bugs": {
+    "url": "https://github.com"
+  },
+  "homepage": "https://github.com"
+}

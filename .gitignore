@@ -1,0 +1,100 @@
+# Node modules
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Yarn/PNPM specific files
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production builds
+client/build/
+server/build/
+
+# Miscellaneous
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+### Java ###
+*.class
+*.log
+*.ctxt
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+
+### Maven ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.utils_backup
+pom.xml.v8
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+### Gradle ###
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+### Eclipse ###
+.settings/
+bin/
+.metadata/
+.classpath
+.project
+*.launch
+.factorypath
+.springBeans
+
+### VS Code ###
+.vscode/
+
+### Operating System ###
+.DS_Store
+Thumbs.db
+
+# Ignore local configuration and secrets
+application-local.yml
+application-dev.yml
+secrets.yml
+application.yml
+.env
+.application.properties
+
+jre/
+backups/
+*.dump
+
+
+# Electron installer output (very large, rebuilt)
+dist/
+*.exe
+
+# Built React app copied into the backend (rebuilt from client/)
+server-java/weighwiz-backend/src/main/resources/static/

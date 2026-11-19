@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WeighWiz Setup</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", sans-serif; margin: 0; padding: 28px; background: #fff; color: #1b1f1d; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    p.sub { margin: 0 0 20px; color: #666; font-size: 14px; }
+    .choice { display: block; border: 1px solid #ccc; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; }
+    .choice input { margin-right: 8px; }
+    .choice small { display: block; margin: 4px 0 0 24px; color: #666; }
+    label.field { display: block; font-size: 14px; margin-top: 12px; }
+    input[type="text"], input[type="number"] { width: 100%; padding: 9px 10px; margin-top: 4px; border: 1px solid #bbb; border-radius: 6px; font-size: 15px; }
+    #message { display: none; margin: 14px 0 0; padding: 10px 12px; border-radius: 6px; background: #fdecea; color: #a12622; font-size: 14px; }
+    .buttons { display: flex; gap: 10px; margin-top: 20px; }
+    button { flex: 1; padding: 11px; border: 0; border-radius: 6px; font-size: 15px; cursor: pointer; }
+    #save { background: #b08d57; color: #fff; }
+    #retry { background: #eee; color: #333; }
+  </style>
+</head>
+<body>
+  <h1>WeighWiz Setup</h1>
+  <p class="sub">Choose what this computer does.</p>
+
+  <label class="choice">
+    <input type="radio" name="mode" id="mode-client" value="client" />
+    <strong>Weighbridge PC (client)</strong>
+    <small>Opens WeighWiz from the server. Most computers use this.</small>
+  </label>
+
+  <label class="choice">
+    <input type="radio" name="mode" id="mode-server" value="server" />
+    <strong>Server (this computer runs WeighWiz)</strong>
+    <small>Starts the WeighWiz backend here. Only one computer should do this.</small>
+  </label>
+
+  <div id="client-fields">
+    <label class="field">Server address (IP or computer name)
+      <input type="text" id="host" placeholder="192.168.1.50" autocomplete="off" />
+    </label>
+    <label class="field">Port
+      <input type="number" id="port" value="8080" min="1" max="65535" />
+    </label>
+  </div>
+
+  <div id="message"></div>
+
+  <div class="buttons">
+    <button id="save">Save and start</button>
+    <button id="retry">Retry</button>
+  </div>
+
+  <script src="setup.js"></script>
+</body>
+</html>
