@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.weighwiz.weighwizbackend.db.DeletedTransaction;
 import com.weighwiz.weighwizbackend.db.DeletedTransactionRepository;
@@ -42,6 +44,9 @@ public class TransactionController {
                              DeletedTransactionRepository deletedRepo) {
         this.repo = repo;
         this.deletedRepo = deletedRepo;
+    }
+    private String currentUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
     // ✅ Get all transactions
@@ -151,6 +156,7 @@ public class TransactionController {
     // 5️⃣ Delete transaction
     @DeleteMapping("/delete/{tid}")
     @Transactional
+    @PreAuthorize("hasAuthority('superadmin')")
     public ResponseEntity<?> deleteTransaction(@PathVariable String tid) {
 
         Transaction existing = repo.findById(tid).orElseThrow(() -> {
@@ -188,7 +194,7 @@ public class TransactionController {
         deleted.setScale2(existing.getScale2());
         deleted.setRemark(existing.getRemark());
         deleted.setDeletedAt(OffsetDateTime.now());
-        deleted.setDeletedBy(existing.getOperator()); // or logged-in username
+        deleted.setDeletedBy(currentUsername());
 
         deletedRepo.save(deleted);
 
@@ -246,6 +252,7 @@ public class TransactionController {
     }
 
     @GetMapping("/export")
+        @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
     public void exportTransactions(HttpServletResponse response) throws IOException {
         List<Transaction> transactions = repo.findAll();
 
@@ -312,6 +319,7 @@ public class TransactionController {
     }
 
     @GetMapping("/export-delete")
+    @PreAuthorize("hasAuthority('superadmin')")
     public void exportDeletedTransaction(HttpServletResponse response) throws IOException {
         List<DeletedTransaction> transactions = deletedRepo.findAll();
 
