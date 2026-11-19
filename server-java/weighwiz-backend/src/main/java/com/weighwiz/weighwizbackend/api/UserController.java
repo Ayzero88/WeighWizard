@@ -1,12 +1,10 @@
 package com.weighwiz.weighwizbackend.api;
 
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,135 +14,168 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.weighwiz.weighwizbackend.auth.JwtService;
 import com.weighwiz.weighwizbackend.db.AuditLog;
 import com.weighwiz.weighwizbackend.db.AuditLogRepository;
 import com.weighwiz.weighwizbackend.db.UserRepository;
 import com.weighwiz.weighwizbackend.db.UserService;
-import com.weighwiz.weighwizbackend.dto.LoginRequest;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/users")
-@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
-     private final UserRepository repo;
-     private final PasswordEncoder passwordEncoder;
-     private final AuditLogRepository auditRepo;
-     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-    public UserController(UserRepository repo, PasswordEncoder passwordEncoder, AuditLogRepository auditRepo) {
+    private final UserRepository repo;
+    private final PasswordEncoder passwordEncoder;
+    private final AuditLogRepository auditRepo;
+    private final JwtService jwtService;
+
+    public UserController(UserRepository repo, PasswordEncoder passwordEncoder, AuditLogRepository auditRepo, JwtService jwtService) {
         this.repo = repo;
         this.passwordEncoder = passwordEncoder;
         this.auditRepo = auditRepo;
+        this.jwtService = jwtService;
     }
 
     private void logAudit(String action, String performedBy, String target) {
-    AuditLog audit = new AuditLog();
-    audit.setAction(action);
-    audit.setPerformedBy(performedBy);
-    audit.setTarget(target);
-    auditRepo.save(audit);
-}
-
-    @PostMapping
-    public UserService createUser(@RequestBody UserService user, HttpServletRequest request) {
-        try {
-            // Encode the password
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            UserService saved = repo.save(user);
-            String currentUser = request.getHeader("X-USER");
-            if (currentUser == null || currentUser.isBlank()) {
-                currentUser = "SYSTEM";
-            }
-            logAudit("CREATE_USER", currentUser, saved.getUsername());
-            logger.info("User {} created by {}", saved.getUsername(), currentUser);
-
-
-            return saved;
-        } catch (DataIntegrityViolationException e) {
-            e.printStackTrace(); //
-            logger.error("Username conflict: {}", user.getUsername(), e);
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
-        }  
+        AuditLog audit = new AuditLog();
+        audit.setAction(action);
+        audit.setPerformedBy(performedBy);
+        audit.setTarget(target);
+        auditRepo.save(audit);
     }
 
-    @PostMapping("/login")
-    public UserService login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+    private String currentUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 
-        try {
-                // Find user by username
-                UserService user = repo.findByUsername(request.getUsername())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"));
+    private String currentRole() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+            .findFirst().map(a -> a.getAuthority()).orElse("");
+    }
 
-                // Check password
-                if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
-                }
-
-                logger.info("Successful login: {}", user.getUsername());
-                logAudit("LOGIN_SUCCESS", user.getUsername(), user.getUsername());
-
-                // Login successful
-                return user; // Or return a DTO excluding password
-        } catch (Exception ex) {
-            logger.warn("Failed login attempt for username: {}", request.getUsername());
-            logAudit("LOGIN_FAILED", request.getUsername(), request.getUsername());
-
-            throw ex;
+    @PostMapping
+    @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
+    public ResponseEntity<UserService> createUser(@RequestBody UserService user) {
+        if (repo.existsByUsername(user.getUsername())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
         }
-          
+        if ("admin".equals(currentRole()) && "superadmin".equals(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins cannot create a superadmin");
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        UserService saved = repo.save(user);
+        logAudit("CREATE_USER", currentUsername(), user.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
     public List<UserService> getAllUsers() {
         return repo.findAll();
     }
 
     @GetMapping("/{id}")
-    public UserService getUserById(@PathVariable Long id) {
-        return repo.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+    @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
+    public ResponseEntity<UserService> getUserById(@PathVariable Long id) {
+        UserService user = repo.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        return ResponseEntity.ok(user);
     }
+
     @PutMapping("/{id}")
-    public UserService updateUser(@PathVariable Long id, @RequestBody UserService updatedUser, HttpServletRequest request) {
-
+    @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
+    public UserService updateUser(@PathVariable Long id, @RequestBody UserService userDetails) {
         UserService existing = repo.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        existing.setUsername(updatedUser.getUsername());
-        existing.setRole(updatedUser.getRole());
-
-        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isBlank()) {
-            existing.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+        if ("admin".equals(currentRole())) {
+            if ("superadmin".equals(existing.getRole())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins cannot change a superadmin");
+            }
+            if ("superadmin".equals(userDetails.getRole())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins cannot make a user superadmin");
+            }
+            if (existing.getUsername().equals(currentUsername())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins cannot change their own account");
+            }
         }
 
-    UserService saved = repo.save(existing);
-    String currentUser = request.getHeader("X-USER");
-    if (currentUser == null || currentUser.isBlank()) {
-        currentUser = "SYSTEM";
-    }
-    logAudit("UPDATE_USER", currentUser, saved.getUsername());
+        if (userDetails.getUsername() != null) {
+            existing.setUsername(userDetails.getUsername());
+        }
 
-    logger.info("User updated: {}", saved.getUsername());
+        if (userDetails.getPassword() != null && !userDetails.getPassword().isBlank()) {
+            existing.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+        }
 
+        if (userDetails.getRole() != null) {
+            existing.setRole(userDetails.getRole());
+        }
 
+        UserService saved = repo.save(existing);
+        logAudit("UPDATE_USER", currentUsername(), existing.getUsername());
         return saved;
     }
 
-    // Delete user
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id, HttpServletRequest request) {
-        UserService existing = repo.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        repo.delete(existing);
-         String currentUser = request.getHeader("X-USER");
-         if (currentUser == null || currentUser.isBlank()) {
-            currentUser = "SYSTEM";
+    @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        UserService user = repo.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (user.getUsername().equals(currentUsername())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot delete your own account");
         }
-        logAudit("DELETE_USER", currentUser, existing.getUsername());
+        if ("admin".equals(currentRole()) && "superadmin".equals(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins cannot delete a superadmin");
+        }
+        String username = user.getUsername();
+        logAudit("DELETE_USER", currentUsername(), username);
+        repo.delete(user);
+        return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+    }
 
-        logger.warn("User deleted: {}", existing.getUsername());
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest) {
+        UserService user = repo.findByUsername(loginRequest.getUsername())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"));
+
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
+
+        String token = jwtService.generateToken(user);
+        logAudit("LOGIN", user.getUsername(), user.getUsername());
+        return ResponseEntity.ok(Map.of("token", token, "user", user));
+    }
+
+    @GetMapping("/audit-logs")
+    @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
+    public List<AuditLog> getAuditLogs() {
+        return auditRepo.findAll();
+    }
+
+    public static class LoginRequest {
+        private String username;
+        private String password;
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+    }
 }
