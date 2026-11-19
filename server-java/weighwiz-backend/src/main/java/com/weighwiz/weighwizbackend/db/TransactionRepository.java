@@ -17,6 +17,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
        "OR t.netWeight IS NULL OR t.netWeight = 0) " +
        "AND t.opsType = 'Standard'")
     List<Transaction> findUnfinishedTransactions();
+    @Query(value = "SELECT nextval('tid_seq')", nativeQuery = true)
+    Long nextTidValue();
     // search by tid
     Optional<Transaction> findByTid(String tid);
 
