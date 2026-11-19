@@ -1,8 +1,6 @@
 import React, { useEffect} from 'react'
 import { FaBrush, FaEye, FaUser } from 'react-icons/fa'
 import Tooltip from '../../reuse/Tooltip'
-import axios from 'axios';
-import { BaseUrl } from '../../reuse/BaseUrl';
 
 const CustomerDetails = ({clearCapParams, clearTicketField, setShowCap, setTicketField,  isPending, showPreview,
             setIsPending, showStart, ticketField, showAlert, setShowPreview, setShowDashBoard, setShowExp, editTid}) => {
@@ -15,15 +13,12 @@ const CustomerDetails = ({clearCapParams, clearTicketField, setShowCap, setTicke
   };
 
   const handleFetchCurrentTid = async () => {
-      try {
-        const count = await axios.get(`${BaseUrl}/transactions/count`);
-        const newTid = !editTid ? (1 + count.data) : "";
-        setTicketField(prev => ({ ...prev, tid: newTid }));
-      } catch (error) {
-        console.error("Failed to fetch pending transactions.", error);
-        showAlert('Failed to fetch pending transactions', 'error');
-      }
+    // The server assigns the TID when the ticket is saved.
+    // Only clear it when TID edit is off; a typed TID must stay as the operator typed it.
+    if (!editTid) {
+        setTicketField(prev => ({ ...prev, tid: "" }));
     }
+  };
 
   const handleWipe = () => {
 
@@ -39,7 +34,8 @@ const CustomerDetails = ({clearCapParams, clearTicketField, setShowCap, setTicke
     // ---------- Transaction Handlers ----------
     const handleView = (e) => {
       e.preventDefault();
-      if (!ticketField.tid || !ticketField.client) { showAlert("company's Name and TID are required", "error"); return; }
+          if (!ticketField.client) { showAlert("company's Name is required", "error"); return; }
+    if (editTid && !ticketField.tid) { showAlert("TID is required", "error"); return; }
       
       setShowPreview(true);
       setShowDashBoard(false);
@@ -62,7 +58,7 @@ const CustomerDetails = ({clearCapParams, clearTicketField, setShowCap, setTicke
                   <form style={isPending ? {pointerEvents: 'none', cursor: 'default'}: {pointerEvents: 'auto', cursor: 'pointer'}}>
                   
                       <div>
-                        <input type='number' placeholder='Transaction Id' name='tid'  onChange={handleInputChange} disabled={!editTid} value={ticketField.tid ?? ""}/>
+                        <input type='text' inputMode='numeric' placeholder={editTid ? 'Transaction Id' : 'Auto'} name='tid'  onChange={handleInputChange} disabled={!editTid} value={ticketField.tid ?? ""}/>
                         <input  type='text' placeholder='Client' name='client'  onChange={handleInputChange} maxLength={33} value={ticketField.client ?? ""}/>
                         <input type='text' placeholder='Address' name='address' onChange={handleInputChange} maxLength={50} value={ticketField.address ?? ""}/>
                       </div>
