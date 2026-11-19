@@ -30,7 +30,7 @@ const TTable = ({user, transactions, viewTransaction, handleEdit, handleDelete, 
             return(
                     <tr key={index}>
 
-                                <td>{transact.tid}</td>
+                                <td>{String(transact.tid).padStart(6, '0')}</td>
                                 <td>{transact.company}</td>
                                 <td>{transact.address}</td>
                                 <td>{transact.product}</td>
