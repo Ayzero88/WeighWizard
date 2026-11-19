@@ -100,6 +100,18 @@ public class DatabaseInitService {
                 deleted_by TEXT
             );
         """);
+        jdbc.execute("""
+            DO $$
+                IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'tid_seq' AND relkind = 'S') THEN
+                    CREATE SEQUENCE tid_seq;
+                    PERFORM setval('tid_seq', COALESCE((SELECT MAX(t) FROM (
+                        SELECT tid::bigint AS t FROM transact WHERE tid ~ '^[0-9]+$'
+                        UNION ALL
+                        SELECT original_tid::bigint AS t FROM deleted_transact WHERE original_tid ~ '^[0-9]+$'
+                    ) s), 0), true);
+                END IF;
+            END $$;
+        """);
 
         jdbc.execute("""
             CREATE TABLE IF NOT EXISTS scale_params (
