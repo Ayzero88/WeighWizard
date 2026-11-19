@@ -2,52 +2,70 @@ package com.weighwiz.weighwizbackend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.weighwiz.weighwizbackend.sc.Lf;
+import com.weighwiz.weighwizbackend.InternalUtil.Lf;
+import com.weighwiz.weighwizbackend.auth.JwtAuthFilter;
+import com.weighwiz.weighwizbackend.db.UserRepository;
 
 import java.util.List;
 
-@Configuration("backendSecurityConfig")
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    private final Lf licenseFilter;
-
-    public SecurityConfig(Lf licenseFilter) {
-        this.licenseFilter = licenseFilter;
+    @Bean
+    public Lf licenseFilter() {
+        return new Lf();
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, Lf licenseFilter, JwtAuthFilter jwtFilter) throws Exception {
         http
-            .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
-            .addFilterBefore(licenseFilter, UsernamePasswordAuthenticationFilter.class)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> response.sendError(401)))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/static/**", "/manifest.json", "/favicon.png", "/*.js", "/*.css").permitAll()
-                .requestMatchers("/api/l/**").permitAll()
-                .anyRequest().permitAll()
-            );
-
+                .requestMatchers("/users/login", "/health", "/", "/error", "/static/**", "/ws/weight").permitAll()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(licenseFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
     @Bean
+    public UserDetailsService userDetailsService(UserRepository repo) {
+        return username -> repo.findByUsername(username)
+            .map(user -> User.withUsername(user.getUsername())
+                .password(user.getPassword())
+                .authorities(user.getRole())
+                .build())
+            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 }
