@@ -26,11 +26,6 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public Lf licenseFilter() {
-        return new Lf();
-    }
-
-    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, Lf licenseFilter, JwtAuthFilter jwtFilter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
