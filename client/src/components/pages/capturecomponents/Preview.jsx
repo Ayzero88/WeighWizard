@@ -81,13 +81,18 @@ const Preview = ({
                         scale2: capturedParams.scale2 || null
                     };
         
-                        await axios.post(`${BaseUrl}/transactions`, transaction);
+                        const saved = await axios.post(`${BaseUrl}/transactions`, transaction);
+                        setTicketField(prev => ({ ...prev, tid: saved.data.tid }));
                         showAlert('Transaction saved successfully', "success");
                         setShowPrint(true);
                         
                 } catch (error) {
                         console.error("Failed to send transaction details.", error);
-                        showAlert("Failed to save transaction. Check backend connection and TID.", "error");
+        if (error.response && error.response.status === 409) {
+            showAlert("Ticket ID already exists. Enter a new Ticket ID", "error");
+        } else {
+                showAlert("Failed to save transaction. Check backend connection and TID.", "error");
+        }
                 }
    
     };
