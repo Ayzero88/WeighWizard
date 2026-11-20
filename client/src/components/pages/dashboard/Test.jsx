@@ -22,35 +22,35 @@ const weightColor = (w) => {
 const Test = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [scaleConfig, setScaleConfig] = useState(null);
-  const [gate2Enabled, setGate2Enabled] = useState(false);
+  const [enabledScales, setEnabledScales] = useState(['GATE_1']);
 
-  // 🔹 Fetch capacity & resolution ONCE
+  // Fetch the enabled scales, then each one's capacity & resolution ONCE
 useEffect(() => {
     const load = async (scaleId) => {
-        const res = await fetch(`${BaseUrl}/print-type?scaleId=${scaleId}`);
-        const d = await res.json();
-        return { capacity: d.capacity, resolution: d.resolution };
+          const res = await fetch(`${BaseUrl}/print-type?scaleId=${scaleId}`);
+          const d = await res.json();
+          return { capacity: d.capacity, resolution: d.resolution };
     };
-    Promise.all([load('GATE_1'), load('GATE_2')])
-        .then(([g1, g2]) => setScaleConfig({ GATE_1: g1, GATE_2: g2 }))
-        .catch(err => console.error(err));
-}, []);
-
-  useEffect(() => {
     fetch(`${BaseUrl}/scale`)
       .then(res => res.json())
-      .then(configs => {
-        const gate2 = configs.find(c => c.scaleId === 'GATE_2');
-        setGate2Enabled(!!gate2?.enabled);
+      .then(async configs => {
+        const enabled = (configs ?? [])
+          .filter(c => c.enabled)
+          .map(c => c.scaleId)
+          .sort();
+        const ids = enabled.length ? enabled : ['GATE_1'];
+        setEnabledScales(ids);
+        const entries = await Promise.all(ids.map(async id => [id, await load(id)]));
+        setScaleConfig(Object.fromEntries(entries));
       })
       .catch(err => console.error(err));
-  }, []);
+}, []);
 
   // 🔹 Pass DB values into WebSocket hook
- const { weights, stop = () => {} } = useWebSocket({
+  const { weights, stop = () => {} } = useWebSocket({
     url: isRunning && scaleConfig ? WsUrl : null,
     configs: scaleConfig
-});
+  });
 
 
   const handleStart = () => {
@@ -63,7 +63,7 @@ useEffect(() => {
     setIsRunning(false);
   };
 
-  const scaleNumberOne = gate2Enabled  ? "1" : "";
+  const multiScale = enabledScales.length > 1;
 
   return (
     <div className='test-wrap'>
@@ -72,21 +72,14 @@ useEffect(() => {
       </h2>
 
       <div className='dump-site' style={{ display: 'flex', gap: '2rem' }}>
-        <div>
-          <h3 style={{color: "white", marginBottom: "1rem"}}>Scale {scaleNumberOne}</h3>
-          <h2 style={{ color: weightColor(weights.GATE_1) }}>
-            <FaWeight /> {weights.GATE_1 || "--"}
-          </h2>
-        </div>
-
-        {gate2Enabled && (
-          <div>
-            <h3 style={{color: "white", marginBottom: "1rem"}}>Scale 2</h3>
-            <h2 style={{ color: weightColor(weights.GATE_2) }}>
-              <FaWeight /> {weights.GATE_2 || "--"}
+        {enabledScales.map(id => (
+          <div key={id}>
+            <h3 style={{color: "white", marginBottom: "1rem"}}>Scale {multiScale ? id.replace('GATE_', '') : ''}</h3>
+            <h2 style={{ color: weightColor(weights[id]) }}>
+              <FaWeight /> {weights[id] || "--"}
             </h2>
           </div>
-        )}
+        ))}
       </div>
 
       <div className='btn'>
