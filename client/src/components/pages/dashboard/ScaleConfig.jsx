@@ -10,36 +10,28 @@ import { emptyScaleParams, mapScaleParams, buildScalePayload, scaleFormError } f
 
 const ScaleConfig = ({showAlert}) => {
 
-  const [statusForLine1, setStatusForLine1] = useState("");
-  const [statusForLine2, setStatusForLine2] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoading2, setIsLoading2] = useState(false);
-  const [scaleParamsForLine1, setScaleParamsForLine1] = useState(emptyScaleParams);
-  const [scaleParamsForLine2, setScaleParamsForLine2] = useState(emptyScaleParams);
+  // One entry per scale shown: Scale 1 always, plus every other enabled scale
+  const [scales, setScales] = useState([]);
 
-  const [paramIdLine1, setParamIdLine1] = useState(null);
-  const [paramIdLine2, setParamIdLine2] = useState(null);
-
-  const handleInputChangeLine1 = (e) => {
+  const handleInputChange = (scaleId) => (e) => {
     const { name, value } = e.target;
-    setScaleParamsForLine1(prev => ({ ...prev, [name]: value }));
+    setScales(prev => prev.map(s => s.scaleId === scaleId ? { ...s, params: { ...s.params, [name]: value } } : s));
   };
 
-  const handleInputChangeLine2 = (e) => {
-    const { name, value } = e.target;
-    setScaleParamsForLine2(prev => ({ ...prev, [name]: value }));
+  const setScaleField = (scaleId, field, value) => {
+    setScales(prev => prev.map(s => s.scaleId === scaleId ? { ...s, [field]: value } : s));
   };
 
-  // Generic save, parameterized by which gate is being saved
-  const saveConfig = async (e, { paramId, params, setLoading, setStatus }) => {
+  // Save one scale's settings
+  const saveConfig = async (e, scale) => {
     e.preventDefault();
 
-    if (!paramId) {
+    if (!scale.id) {
       showAlert('Scale settings have not loaded yet.', 'error');
       return;
     }
 
-    const payload = buildScalePayload(params);
+    const payload = buildScalePayload(scale.params);
     const problem = scaleFormError(payload);
     if (problem) {
       showAlert(problem, 'error');
@@ -47,89 +39,56 @@ const ScaleConfig = ({showAlert}) => {
     }
 
     try {
-      setLoading(true);
-      await axios.put(`${BaseUrl}/scale/${paramId}`, payload);
+      setScaleField(scale.scaleId, 'loading', true);
+      await axios.put(`${BaseUrl}/scale/${scale.id}`, payload);
       showAlert('Scale parameters saved!', 'success');
-      setStatus('saved');
+      setScaleField(scale.scaleId, 'status', 'saved');
     } catch (err) {
       console.error(err);
       showAlert('Failed to save scale parameters.', 'error');
     } finally {
-      setLoading(false);
+      setScaleField(scale.scaleId, 'loading', false);
     }
   };
-
-  // Save
-  const handleSetLine1 = (e) => saveConfig(e, {
-    paramId: paramIdLine1,
-    params: scaleParamsForLine1,
-    setLoading: setIsLoading,
-    setStatus: setStatusForLine1
-  });
-
-  const handleSetLine2 = (e) => saveConfig(e, {
-    paramId: paramIdLine2,
-    params: scaleParamsForLine2,
-    setLoading: setIsLoading2,
-    setStatus: setStatusForLine2
-  });
-
-  const scaleNumberOne = scaleParamsForLine2.enabled ? "1" : "";
 
   useEffect(() => {
     axios.get(`${BaseUrl}/scale`)
       .then(res => {
-        const configs = res.data ?? [];
-
-        const gate1 = configs.find(c => c.scaleId === 'GATE_1');
-        if (gate1) {
-          setParamIdLine1(gate1.id);
-          setScaleParamsForLine1(mapScaleParams(gate1));
-          setStatusForLine1('saved');
-        } else {
-          setStatusForLine1('not saved');
-        }
-
-        const gate2 = configs.find(c => c.scaleId === 'GATE_2');
-        if (gate2) {
-          setParamIdLine2(gate2.id);
-          setScaleParamsForLine2({ ...mapScaleParams(gate2), enabled: gate2.enabled });
-          setStatusForLine2('saved');
-        } else {
-          setStatusForLine2('not saved');
-        }
+        const configs = (res.data ?? [])
+          .filter(c => c.scaleId === 'GATE_1' || c.enabled)
+          .sort((a, b) => a.scaleId.localeCompare(b.scaleId));
+        setScales(configs.map(c => ({
+          scaleId: c.scaleId,
+          id: c.id,
+          params: { ...mapScaleParams(c), enabled: c.enabled },
+          status: 'saved',
+          loading: false,
+        })));
       })
       .catch(err => console.error(err));
   }, []);
 
+  // With only one scale, titles drop the number (same as before)
+  const multiScale = scales.length > 1;
 
   return (
     <div className='db-wrap scale-configuration'>
-      <div className='gate-1'>
-        <div className='gate-1-title'>
-          <FaLink size={20} color={statusForLine1 === 'saved' ? 'lightgreen' : 'gray'} />
-          <h2>{statusForLine1 === 'saved' ? `Scale ${scaleNumberOne} Config Saved` : `Set Scale ${scaleNumberOne} Configuration`}</h2>
-        </div>
+      {scales.map((scale) => {
+        const label = multiScale ? scale.scaleId.replace('GATE_', '') : '';
+        return (
+          <div className='gate-1' key={scale.scaleId}>
+            <div className='gate-1-title'>
+              <FaLink size={20} color={scale.status === 'saved' ? 'lightgreen' : 'gray'} />
+              <h2>{scale.status === 'saved' ? `Scale ${label} Config Saved` : `Set Scale ${label} Configuration`}</h2>
+            </div>
 
-        <form>
-          <ScaleFields params={scaleParamsForLine1} onChange={handleInputChangeLine1} />
-          {(statusForLine1 !== 'saved') && <Btn btnName={isLoading ? <BtnSpinner /> : "Save"} handleClick={handleSetLine1} p="0.8rem" fs="1rem" pr="1rem" col="#fff" bgc="#b08d57" gp="0.5rem" wt="100%" bd="none" bdr="5px" />}
-        </form>
-      </div>
-
-      {scaleParamsForLine2.enabled &&
-        <div className='gate-2'>
-          <div className='gate-2-title'>
-            <FaLink size={20} color={statusForLine2 === 'saved' ? 'lightgreen' : 'gray'} />
-            <h2>{statusForLine2 === 'saved' ? 'Scale 2 Config Saved' : 'Set Scale 2 Configuration'}</h2>
+            <form>
+              <ScaleFields params={scale.params} onChange={handleInputChange(scale.scaleId)} />
+              {(scale.status !== 'saved') && <Btn btnName={scale.loading ? <BtnSpinner /> : "Save"} handleClick={(e) => saveConfig(e, scale)} p="0.8rem" fs="1rem" pr="1rem" col="#fff" bgc="#b08d57" gp="0.5rem" wt="100%" bd="none" bdr="5px" />}
+            </form>
           </div>
-
-          <form>
-            <ScaleFields params={scaleParamsForLine2} onChange={handleInputChangeLine2} />
-            {(statusForLine2 !== 'saved') && <Btn btnName={isLoading2 ? <BtnSpinner /> : "Save"} handleClick={handleSetLine2} p="0.8rem" fs="1rem" pr="1rem" col="#fff" bgc="#b08d57" gp="0.5rem" wt="100%" bd="none" bdr="5px" />}
-          </form>
-        </div>}
-
+        );
+      })}
     </div>
   )
 }
