@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import axios from 'axios';
 import { FaSearch } from 'react-icons/fa';
 import { BaseUrl } from './BaseUrl';
 
@@ -31,21 +32,9 @@ const DateRanger = ({ setTransactions, showAlert, setIsLoading3 }) => {
       if (advance.start) payload.startDate = toISO(advance.start);
       if (advance.end) payload.endDate = toISO(advance.end, true);
 
-      const response = await fetch(
-         `${BaseUrl}/transactions/filter-by-date`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await axios.post(`${BaseUrl}/transactions/filter-by-date`, payload);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
-
-      const data = await response.json();
-      setTransactions(data); 
+      setTransactions(response.data);
       setIsLoading3(false);
 
     } catch (error) {
