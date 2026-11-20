@@ -181,8 +181,13 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
             const sets = { GATE_1: adjustDecimal };
             for (const id of enabled) {
                 if (id === 'GATE_1') continue;
-                const p = await axios.get(`${BaseUrl}/print-type`, { params: { scaleId: id } });
-                sets[id] = p.data.adjustDecimal;
+                try {
+                    const p = await axios.get(`${BaseUrl}/print-type`, { params: { scaleId: id } });
+                    sets[id] = p.data.adjustDecimal;
+                } catch (err) {
+                    console.error(err);
+                    sets[id] = 0;
+                }
             }
             setDecimalSets(sets);
         } catch (error) {
