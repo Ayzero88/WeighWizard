@@ -6,7 +6,7 @@ import CustomerDetails from '../capturecomponents/CustomerDetails';
 
 const Capture = ({ setShowDashBoard, setShowExp, showAlert,  setDecimalSet, decimalSet, setIsToggle, isToggle,
   wsRef, tareRef, readingRef, startWebSocket, stopWebSocket, weight, setWeight, showStop, setShowStop, showTare, 
-  setShowTare, weights, decimalSets, gate2Enabled,  ticketField, setTicketField
+  setShowTare, weights, decimalSets, enabledScales, multiScale,  ticketField, setTicketField
   }) => {
   
   const [showCap, setShowCap] = useState(false);
@@ -137,7 +137,7 @@ const Capture = ({ setShowDashBoard, setShowExp, showAlert,  setDecimalSet, deci
                   readingRef={readingRef}
                   weights={weights}
                   decimalSets={decimalSets}
-                  gate2Enabled={gate2Enabled}
+                  enabledScales={enabledScales}
                   handleInputChange={handleInputChange}
 
                 />
@@ -160,7 +160,7 @@ const Capture = ({ setShowDashBoard, setShowExp, showAlert,  setDecimalSet, deci
               setFirstOperator={setFirstOperator}
               showAlert={showAlert}
               clearTicketField={clearTicketField}
-              gate2Enabled={gate2Enabled}
+              multiScale={multiScale}
 
           />
         }
