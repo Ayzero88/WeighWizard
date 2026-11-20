@@ -20,7 +20,7 @@ public class PrintTypeController {
     }
 
     public static class PrintTypeRequest {
-        public String scaleId;          // "GATE_1" (default) or "GATE_2"
+        public String scaleId;          // "GATE_1" (default) to "GATE_4"
         public Boolean standard;
         public Boolean straight;
         public Integer adjustDecimal;
@@ -33,7 +33,8 @@ public class PrintTypeController {
 
     private String normalize(String scaleId) {
         if (scaleId == null || scaleId.isBlank()) return "GATE_1";
-        if (!scaleId.equals("GATE_1") && !scaleId.equals("GATE_2")) {
+        if (!scaleId.equals("GATE_1") && !scaleId.equals("GATE_2")
+                && !scaleId.equals("GATE_3") && !scaleId.equals("GATE_4")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown scale: " + scaleId);
         }
         return scaleId;
@@ -56,7 +57,7 @@ public class PrintTypeController {
             }
             edit = String.valueOf("true".equalsIgnoreCase(body.edit));
         } else {
-            // Gate 2 shares the print type and edit setting with Gate 1
+            // Extra scales share the print type and edit setting with Gate 1
             PrintTypeService gate1 = repo.findByScaleId("GATE_1").orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.BAD_REQUEST, "Save Gate 1 settings first"));
             trueKey = gate1.getPtype();
@@ -81,7 +82,8 @@ public class PrintTypeController {
 
         PrintTypeService printType = existing != null ? existing : new PrintTypeService();
         if (existing == null) {
-            printType.setId("GATE_1".equals(scaleId) ? 1L : 2L);
+            // one print_type row per scale; the row id matches the gate number
+            printType.setId(Long.parseLong(scaleId.replace("GATE_", "")));
         }
         printType.setScaleId(scaleId);
         printType.setPtype(trueKey);
@@ -100,7 +102,7 @@ public class PrintTypeController {
         String id = normalize(scaleId);
 
         return repo.findByScaleId(id)
-            .or(() -> repo.findByScaleId("GATE_1"))   // Gate 2 uses Gate 1's values until its own are saved
+            .or(() -> repo.findByScaleId("GATE_1"))   // extra scales use Gate 1's values until their own are saved
             .map(pt -> {
                 Map<String, Object> map = new HashMap<>();
                 map.put("ptype", pt.getPtype());
