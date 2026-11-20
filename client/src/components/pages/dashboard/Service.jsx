@@ -20,7 +20,7 @@ import { RULES, hasRole } from '../../auth/roles';
 import { BaseUrl } from '../../reuse/BaseUrl';
 
 
-const Service = ({showAlert, showConfirmAlert, user, gate2Enabled}) => {
+const Service = ({showAlert, showConfirmAlert, user, multiScale}) => {
     const [search, setSearch] = useState("");
     const [transactions, setTransactions] = useState([]);
     const [transaction, setTransaction] = useState({});
@@ -316,7 +316,7 @@ const Service = ({showAlert, showConfirmAlert, user, gate2Enabled}) => {
         {showDetails.printPreview && 
             (
                 <RequireRole allowedRoles={RULES.viewTickets} showAlert={showAlert} setComp={setDetails} comp='table'>
-                    <DisplayT capturedParams={capturedParams}  ticketField={ticketField} gate2Enabled={gate2Enabled}/>
+                    <DisplayT capturedParams={capturedParams}  ticketField={ticketField} multiScale={multiScale}/>
                 </RequireRole>
 
             )}
