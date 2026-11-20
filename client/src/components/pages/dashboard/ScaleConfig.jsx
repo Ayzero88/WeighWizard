@@ -8,7 +8,7 @@ import ScaleFields from './ScaleFields';
 import { emptyScaleParams, mapScaleParams, buildScalePayload, scaleFormError } from './scaleParams';
 
 
-const ScaleConfig = ({showAlert}) => {
+const ScaleConfig = ({showAlert, visibleScales}) => {
 
   // One entry per scale shown: Scale 1 always, plus every other enabled scale
   const [scales, setScales] = useState([]);
@@ -68,12 +68,15 @@ const ScaleConfig = ({showAlert}) => {
       .catch(err => console.error(err));
   }, []);
 
+  // Per-user scale lock: only show the scales this user is allowed on
+    const shownScales = visibleScales ? scales.filter(s => visibleScales.includes(s.scaleId)) : scales;
+  
   // With only one scale, titles drop the number (same as before)
-  const multiScale = scales.length > 1;
+  const multiScale = shownScales.length > 1;
 
   return (
     <div className='db-wrap scale-configuration'>
-      {scales.map((scale) => {
+      {shownScales.map((scale) => {
         const label = multiScale ? scale.scaleId.replace('GATE_', '') : '';
         return (
           <div className='gate-1' key={scale.scaleId}>
