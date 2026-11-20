@@ -219,16 +219,22 @@ const PrintType = ({showAlert, showConfirmAlert}) => {
 
     axios.get(`${BaseUrl}/scale`)
     .then(async res => {
-        const extras = (res.data ?? [])
+        const extras = (Array.isArray(res.data) ? res.data : [])
             .filter(c => c.enabled && c.scaleId !== 'GATE_1')
             .sort((a, b) => a.scaleId.localeCompare(b.scaleId));
         const loaded = [];
         for (const c of extras) {
-            const p = await axios.get(`${BaseUrl}/print-type`, { params: { scaleId: c.scaleId } });
-            const { adjustDecimal, capacity, resolution } = p.data;
-            loaded.push({ scaleId: c.scaleId, decimal: adjustDecimal, capacity, resolution });
-        }
-        setExtraScales(loaded);
+                try {
+                    const p = await axios.get(`${BaseUrl}/print-type`, { params: { scaleId: c.scaleId } });
+                const { adjustDecimal, capacity, resolution } = p.data;
+                    loaded.push({ scaleId: c.scaleId, decimal: adjustDecimal, capacity, resolution });
+            } catch (err) {
+                    // One scale failing must not hide the others: show its entry blank
+                    console.error(err);
+                    loaded.push({ scaleId: c.scaleId, decimal: '', capacity: '', resolution: '' });
+                }
+            }
+            setExtraScales(loaded);
     })
     .catch(err => console.error(err));
 
