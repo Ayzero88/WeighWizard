@@ -244,14 +244,29 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
                     <option key={role} value={role}>{role === "admin" ? "Admin" : "Operator"}</option>
                 ))}
             </select>
-            <div className='allowed-scales'>
-                <p>Allowed scales</p>
-                {allScales.map(id => (
-                    <label key={id} style={{ marginRight: '0.8rem' }}>
-                        <input type='checkbox' checked={isScaleChecked(id)} onChange={() => toggleScale(id)} />
-                        {' '}Scale {id.replace('GATE_', '')}
-                    </label>
-                ))}
+            <div className='allowed-scales' style={{ marginTop: '1.2rem', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 0.6rem', fontSize: '0.85rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8a6d3b', fontWeight: 600 }}>Allowed scales</p>
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {allScales.map(id => {
+                        const checked = isScaleChecked(id);
+                        return (
+                            <label key={id} style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                                padding: '0.45rem 0.9rem', borderRadius: '999px', cursor: 'pointer',
+                                border: `1.5px solid ${checked ? '#b08d57' : '#d8c9ae'}`,
+                                background: checked ? '#b08d57' : '#fdfaf4',
+                                color: checked ? '#fff' : '#8a6d3b',
+                                fontSize: '0.9rem', fontWeight: 600,
+                                transition: 'all 0.15s ease', userSelect: 'none'
+                            }}>
+                                <input type='checkbox' checked={checked} onChange={() => toggleScale(id)} style={{ display: 'none' }} />
+                                <span style={{ fontSize: '0.8rem' }}>{checked ? '✓' : '+'}</span>
+                                Scale {id.replace('GATE_', '')}
+                            </label>
+                        );
+                    })}
+                </div>
+                <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: '#999' }}>All four ticked means every scale.</p>
             </div>
         </div>}
 
