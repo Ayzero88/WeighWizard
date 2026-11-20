@@ -26,12 +26,12 @@ const PrintType = ({showAlert, showConfirmAlert}) => {
         file: '',
     });
     const [isLoading, setIsLoading] = useState(false);
-    const [gate2Enabled, setGate2Enabled] = useState(false);
-    const [gate2, setGate2] = useState({ decimal: "", capacity: "", resolution: "" });
+    // Settings for every enabled scale beyond Scale 1 (they copy the print type from Scale 1)
+    const [extraScales, setExtraScales] = useState([]);
 
-    const handleGate2Change = (e) => {
+    const handleExtraChange = (scaleId) => (e) => {
         const { name, value } = e.target;
-        setGate2(prev => ({ ...prev, [name]: value }));
+        setExtraScales(prev => prev.map(s => s.scaleId === scaleId ? { ...s, [name]: value } : s));
     };
 
     const handleInputChange = (event) => {
@@ -149,18 +149,18 @@ const PrintType = ({showAlert, showConfirmAlert}) => {
             setIsLoading(true);
             const config = { headers: { "Content-Type": "application/json" } };
 
-            // Gate 1 first: Gate 2 copies its print type and TID-edit setting from it
+            // Scale 1 first: the other scales copy its print type and TID-edit setting from it
             const res1 = await axios.post(`${BaseUrl}/print-type`, payload, config);
             let allUnchanged = res1.data.status === "unchanged";
 
-            if (gate2Enabled) {
-                const res2 = await axios.post(`${BaseUrl}/print-type`, {
-                    scaleId: 'GATE_2',
-                    adjustDecimal: Number(gate2.decimal),
-                    capacity: Number(gate2.capacity),
-                    resolution: Number(gate2.resolution),
+            for (const s of extraScales) {
+                const r = await axios.post(`${BaseUrl}/print-type`, {
+                    scaleId: s.scaleId,
+                    adjustDecimal: Number(s.decimal),
+                    capacity: Number(s.capacity),
+                    resolution: Number(s.resolution),
                 }, config);
-                allUnchanged = allUnchanged && res2.data.status === "unchanged";
+                allUnchanged = allUnchanged && r.data.status === "unchanged";
             }
 
             if (allUnchanged) {
@@ -218,18 +218,17 @@ const PrintType = ({showAlert, showConfirmAlert}) => {
     .catch(err => console.error(err));
 
     axios.get(`${BaseUrl}/scale`)
-    .then(res => {
-        const g2 = (res.data ?? []).find(c => c.scaleId === 'GATE_2');
-        if (g2?.enabled) {
-            setGate2Enabled(true);
-            return axios.get(`${BaseUrl}/print-type`, { params: { scaleId: 'GATE_2' } });
+    .then(async res => {
+        const extras = (res.data ?? [])
+            .filter(c => c.enabled && c.scaleId !== 'GATE_1')
+            .sort((a, b) => a.scaleId.localeCompare(b.scaleId));
+        const loaded = [];
+        for (const c of extras) {
+            const p = await axios.get(`${BaseUrl}/print-type`, { params: { scaleId: c.scaleId } });
+            const { adjustDecimal, capacity, resolution } = p.data;
+            loaded.push({ scaleId: c.scaleId, decimal: adjustDecimal, capacity, resolution });
         }
-    })
-    .then(res => {
-        if (res) {
-            const { adjustDecimal, capacity, resolution } = res.data;
-            setGate2({ decimal: adjustDecimal, capacity, resolution });
-        }
+        setExtraScales(loaded);
     })
     .catch(err => console.error(err));
 
@@ -265,21 +264,21 @@ const PrintType = ({showAlert, showConfirmAlert}) => {
                      <p><FaEdit/> Enable TID Edit</p>
                      <img onClick={handleEditToggle} src={isToggle.editTid ? toggleOn : toggleOff } alt="toggle button" width="35rem"/>
                 </div>
-                 <h3><FiSettings/> Scale {gate2Enabled && 1} Setting</h3>
+                 <h3><FiSettings/> Scale {extraScales.length > 0 ? 1 : ''} Setting</h3>
                 <input type='number' placeholder="Decimal Places" name='decimal' value={isToggle.decimal ?? ''}  onChange={handleInputChange}/>
                 <input type='number' placeholder="Capacity" name='capacity' value={isToggle.capacity ?? ''}  onChange={handleInputChange}/>
                 <input type='number' placeholder="Resolution" name='resolution' value={isToggle.resolution ?? ''}  onChange={handleInputChange}/>
                 
         </div>
 
-        {gate2Enabled && (
-                <div className='owner'>
-                    <h3><FiSettings/> Scale 2 Setting</h3>
-                    <input type='number' placeholder="Decimal Places" name='decimal' value={gate2.decimal ?? ''} onChange={handleGate2Change}/>
-                    <input type='number' placeholder="Capacity" name='capacity' value={gate2.capacity ?? ''} onChange={handleGate2Change}/>
-                    <input type='number' placeholder="Resolution" name='resolution' value={gate2.resolution ?? ''} onChange={handleGate2Change}/>
+        {extraScales.map(s => (
+                <div className='owner' key={s.scaleId}>
+                    <h3><FiSettings/> Scale {s.scaleId.replace('GATE_', '')} Setting</h3>
+                    <input type='number' placeholder="Decimal Places" name='decimal' value={s.decimal ?? ''} onChange={handleExtraChange(s.scaleId)}/>
+                    <input type='number' placeholder="Capacity" name='capacity' value={s.capacity ?? ''} onChange={handleExtraChange(s.scaleId)}/>
+                    <input type='number' placeholder="Resolution" name='resolution' value={s.resolution ?? ''} onChange={handleExtraChange(s.scaleId)}/>
                 </div>
-            )}
+            ))}
         
         <div>
             <button disabled={isLoading} onClick={confirmSave}> {isLoading ? <BtnSpinner/> : 'Save'} </button>
