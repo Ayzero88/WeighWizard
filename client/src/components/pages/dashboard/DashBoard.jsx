@@ -256,7 +256,7 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
 
             {content.linkScale && 
                 <RequireRole allowedRoles={["superadmin", "admin", "operator"]} showAlert={showAlert} setComp={setContent} comp='home'>
-                    <ScaleConfig showAlert={showAlert}/>
+                    <ScaleConfig showAlert={showAlert} visibleScales={visibleScales}/>
                 </RequireRole>
             }
 
