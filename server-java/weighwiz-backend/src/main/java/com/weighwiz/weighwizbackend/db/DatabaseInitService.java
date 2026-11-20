@@ -32,6 +32,22 @@ public class DatabaseInitService {
                     ('GATE_2', FALSE, 'COM2', 9600, 8, 1, 'NONE', 'NONE')
                 ON CONFLICT (scale_id) DO NOTHING
             """);
+
+            jdbc.update("""
+                INSERT INTO scale_params
+                    (scale_id, enabled, port, baud_rate, databits, stopbits, parity, flow_control)
+                VALUES
+                    ('GATE_3', FALSE, 'COM3', 9600, 8, 1, 'NONE', 'NONE')
+                ON CONFLICT (scale_id) DO NOTHING
+            """);
+
+            jdbc.update("""
+                INSERT INTO scale_params
+                    (scale_id, enabled, port, baud_rate, databits, stopbits, parity, flow_control)
+                VALUES
+                    ('GATE_4', FALSE, 'COM4', 9600, 8, 1, 'NONE', 'NONE')
+                ON CONFLICT (scale_id) DO NOTHING
+            """);
     }
 
     public void createTables() {
