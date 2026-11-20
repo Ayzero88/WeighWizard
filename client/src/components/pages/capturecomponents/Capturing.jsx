@@ -3,7 +3,7 @@ import { FaCamera, FaPlay, FaStop, FaWeight } from 'react-icons/fa'
 
 
 const Capturing = ({handleInputChange, showStart, setShowStart, clearCapParams, clearTicketField, weight: weightProp, setWeight, showStop, 
-  setShowStop, showTare, setShowTare, decimalSet: decimalSetProp, decimalSets, weights, gate2Enabled, isToggle, setShowCap, showCap, showAlert, isPending, setIsPending, setTicketField, 
+  setShowStop, showTare, setShowTare, decimalSet: decimalSetProp, decimalSets, weights, enabledScales, isToggle, setShowCap, showCap, showAlert, isPending, setIsPending, setTicketField, 
   capturedParams, setCapturedParams, ticketField, wsRef, tareRef, readingRef, startWebSocket, stopWebSocket}) => {
 
       const [activeGate, setActiveGate] = useState(() => {
@@ -16,7 +16,8 @@ const Capturing = ({handleInputChange, showStart, setShowStart, clearCapParams, 
   };
 
   // The scale being captured from. Everything below keeps using `weight` and `decimalSet`.
-  const gate = gate2Enabled ? activeGate : 'GATE_1';
+  const scales = enabledScales && enabledScales.length ? enabledScales : ['GATE_1'];
+  const gate = scales.includes(activeGate) ? activeGate : scales[0];
   const weight = weights ? (weights[gate] ?? null) : weightProp;
   const decimalSet = decimalSets?.[gate] ?? decimalSetProp;
 
@@ -149,16 +150,16 @@ const Capturing = ({handleInputChange, showStart, setShowStart, clearCapParams, 
                             <h4> <FaCamera/> Capture </h4>
                             <h4> <FaWeight/> {isToggle.standard ? "Standard" : isToggle.straight ? 'Straight' : null} </h4>
                         </div>
-                    {gate2Enabled && weights && (
+                    {scales.length > 1 && weights && (
                     <div className='gate-select' style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                      {['GATE_1', 'GATE_2'].map((g, i) => (
+                      {scales.map((g) => (
                         <button
                           key={g}
                           type="button"
                           onClick={() => selectGate(g)}
                           style={{ fontWeight: gate === g ? 'bold' : 'normal', opacity: gate === g ? 1 : 0.6 }}
                         >
-                          Scale {i + 1}
+                          Scale {g.replace('GATE_', '')}
                         </button>
                       ))}
                     </div>
