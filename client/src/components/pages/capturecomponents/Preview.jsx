@@ -9,7 +9,7 @@ import { BaseUrl } from '../../reuse/BaseUrl';
 
 const Preview = ({
         setShowExp, setShowPreview, capturedParams, ticketField, isToggle, setCapturedParams, showAlert, firstOperator,
-        setTicketField, setShowCap, isPending, setIsPending,  operator, setFirstOperator, gate2Enabled}) => {
+        setTicketField, setShowCap, isPending, setIsPending,  operator, setFirstOperator, multiScale}) => {
 
     const [showPrint, setShowPrint] = useState(false);
     const [owner, setOwner] = useState("");
@@ -194,9 +194,9 @@ const Preview = ({
     }, [isPending, ticketField.tid]);
 
     const firstScale = capturedParams.scale1 || savedScale1;
-    const lastScale = capturedParams.scale1;
+    const lastScale = capturedParams.scale2;
 
-    const scaleLabel = (id) => id === 'GATE_1' ? 'Scale 1' : id === 'GATE_2' ? 'Scale 2' : '';
+    const scaleLabel = (id) => id ? 'Scale ' + id.replace('GATE_', '') : '';
     const firstLabel = isToggle.standard ? 'First weight' : 'First capture';
     const lastLabel = isToggle.standard ? 'Second weight' : 'Final capture';
 
@@ -323,7 +323,7 @@ const Preview = ({
                         
                         {ticketField.batchNo &&  <p><span> <FaBarcode color='gray'/> Batch Number:</span> {ticketField.batchNo}</p>}
                             <p><span> <FaWeight color='gray'/> Weigh Operation:</span> {isToggle.standard ? "Standard" : 'Straight'}</p>
-                            {gate2Enabled && (firstScale || lastScale) && (
+                            {multiScale && (firstScale || lastScale) && (
                                 <p>
                                     <span> <FaWeight color='gray'/> Scales:</span>{' '}
                                     {firstScale && `${firstLabel}: ${scaleLabel(firstScale)}`}
