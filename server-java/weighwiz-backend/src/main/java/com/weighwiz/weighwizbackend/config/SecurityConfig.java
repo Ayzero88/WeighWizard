@@ -33,7 +33,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> response.sendError(401)))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/users/login", "/health", "/", "/error", "/static/**", "/ws/weight").permitAll()
+                .requestMatchers("/users/login", "/health", "/", "/index.html", "/error", "/static/**", "/favicon.ico", "/manifest.json", "/logo192.png", "/logo512.png", "/asset-manifest.json", "/robots.txt", "/ws/weight").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(licenseFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
