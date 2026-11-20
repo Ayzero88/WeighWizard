@@ -10,35 +10,26 @@ import { emptyScaleParams, mapScaleParams, buildScalePayload, scaleFormError } f
 
 const UpdateScaleConfig = ({showAlert, showConfirmAlert}) => {
 
-    const [scaleParamsLine1, setScaleParamsLine1] = useState(emptyScaleParams);
-    const [scaleParamsLine2, setScaleParamsLine2] = useState(emptyScaleParams);
-
-    const [paramIdLine1, setParamIdLine1] = useState(null);
-    const [paramIdLine2, setParamIdLine2] = useState(null);
-
-    const [gate2Enabled, setGate2Enabled] = useState(false);
+    // One entry per scale shown: Scale 1 always, plus every other enabled scale
+    const [scales, setScales] = useState([]);
     const [activeGate, setActiveGate] = useState('GATE_1');
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [isLoading2, setIsLoading2] = useState(false);
-
-    const handleInputChangeLine1 = (e) => {
+    const handleInputChange = (scaleId) => (e) => {
         const { name, value } = e.target;
-        setScaleParamsLine1(prev => ({ ...prev, [name]: value }));
+        setScales(prev => prev.map(s => s.scaleId === scaleId ? { ...s, params: { ...s.params, [name]: value } } : s));
     };
 
-    const handleInputChangeLine2 = (e) => {
-        const { name, value } = e.target;
-        setScaleParamsLine2(prev => ({ ...prev, [name]: value }));
+    const setLoadingFor = (scaleId, value) => {
+        setScales(prev => prev.map(s => s.scaleId === scaleId ? { ...s, loading: value } : s));
     };
 
-    const updateGate = async (paramId, params, setLoading) => {
-        if (!paramId) {
+    const updateGate = async (scale) => {
+        if (!scale.id) {
             showAlert("No scale configuration entered to update.", "error");
             return;
         }
 
-        const payload = buildScalePayload(params);
+        const payload = buildScalePayload(scale.params);
         const problem = scaleFormError(payload);
         if (problem) {
             showAlert(problem, "error");
@@ -46,8 +37,8 @@ const UpdateScaleConfig = ({showAlert, showConfirmAlert}) => {
         }
 
         try {
-            setLoading(true);
-            const response = await axios.put(`${BaseUrl}/scale/${paramId}`, payload);
+            setLoadingFor(scale.scaleId, true);
+            const response = await axios.put(`${BaseUrl}/scale/${scale.id}`, payload);
 
             if (response.data.status === "unchanged") {
                 showAlert("No changes made.", "info");
@@ -67,80 +58,52 @@ const UpdateScaleConfig = ({showAlert, showConfirmAlert}) => {
                 showAlert("Failed to update scale parameters. Check database connection.", "error");
             }
         } finally {
-            setLoading(false);
+            setLoadingFor(scale.scaleId, false);
         }
     };
 
-    const handleUpdateLine1 = (e) => {
+    const confirmUpdate = (e, scale) => {
         e.preventDefault();
-        updateGate(paramIdLine1, scaleParamsLine1, setIsLoading);
+        showConfirmAlert("Update Scale Parameters?", "info", () => updateGate(scale));
     };
-
-    const handleUpdateLine2 = (e) => {
-        e.preventDefault();
-        updateGate(paramIdLine2, scaleParamsLine2, setIsLoading2);
-    };
-
-    const confirmUpdateLine1 = (e) => {
-        e.preventDefault();
-        showConfirmAlert("Update Scale Parameters?", "info", () => handleUpdateLine1(e));
-    };
-
-    const confirmUpdateLine2 = (e) => {
-        e.preventDefault();
-        showConfirmAlert("Update Scale Parameters?", "info", () => handleUpdateLine2(e));
-    };
-
-    const scaleNumberOne = gate2Enabled ? "1" : "";
 
     useEffect(() => {
         axios.get(`${BaseUrl}/scale`)
             .then(res => {
-                const configs = res.data ?? [];
-
-                const gate1 = configs.find(c => c.scaleId === 'GATE_1');
-                if (gate1) {
-                    setParamIdLine1(gate1.id);
-                    setScaleParamsLine1(mapScaleParams(gate1));
-                }
-
-                const gate2 = configs.find(c => c.scaleId === 'GATE_2');
-                if (gate2 && gate2.enabled) {
-                    setGate2Enabled(true);
-                    setParamIdLine2(gate2.id);
-                    setScaleParamsLine2(mapScaleParams(gate2));
-                }
+                const configs = (res.data ?? [])
+                    .filter(c => c.scaleId === 'GATE_1' || c.enabled)
+                    .sort((a, b) => a.scaleId.localeCompare(b.scaleId));
+                setScales(configs.map(c => ({
+                    scaleId: c.scaleId,
+                    id: c.id,
+                    params: mapScaleParams(c),
+                    loading: false,
+                })));
             })
             .catch(err => console.error(err));
     }, []);
 
+    // With only one scale, the title drops the number and no tabs show (same as before)
+    const multiScale = scales.length > 1;
+    const active = scales.find(s => s.scaleId === activeGate) || scales[0];
 
     return (
         <div className='db-wrap scale-configuration'>
-            {(gate2Enabled &&
+            {multiScale && (
                 <div className='gate-tabs' style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                    <button type="button" onClick={() => setActiveGate('GATE_1')} disabled={activeGate === 'GATE_1'}>
-                        Scale 1
-                    </button>
-                    <button type="button" onClick={() => setActiveGate('GATE_2')} disabled={activeGate === 'GATE_2'}>
-                        Scale 2
-                    </button>
+                    {scales.map(s => (
+                        <button key={s.scaleId} type="button" onClick={() => setActiveGate(s.scaleId)} disabled={activeGate === s.scaleId}>
+                            Scale {s.scaleId.replace('GATE_', '')}
+                        </button>
+                    ))}
                 </div>
             )}
-            {activeGate === 'GATE_1' && (
+            {active && (
                 <div className="gate-1">
-                    <h2><FaArrowUp color='gray' /> Update Scale {scaleNumberOne} Params</h2>
+                    <h2><FaArrowUp color='gray' /> Update Scale {multiScale ? active.scaleId.replace('GATE_', '') : ''} Params</h2>
                     <form>
-                        <ScaleFields params={scaleParamsLine1} onChange={handleInputChangeLine1} />
-                        <Btn btnName={isLoading ? <BtnSpinner /> : "Update Parameter"} handleClick={confirmUpdateLine1} p="0.8rem" fs="1rem" pr="1rem" col="#fff" bgc="#b08d57" gp="0.5rem" wt="100%" bd="none" bdr="5px" />
-                    </form>
-                </div>)}
-            {activeGate === 'GATE_2' && gate2Enabled && (
-                <div className="gate-2">
-                    <h2><FaArrowUp color='gray' /> Update Scale 2 Params</h2>
-                    <form>
-                        <ScaleFields params={scaleParamsLine2} onChange={handleInputChangeLine2} />
-                        <Btn btnName={isLoading2 ? <BtnSpinner /> : "Update Parameter"} handleClick={confirmUpdateLine2} p="0.8rem" fs="1rem" pr="1rem" col="#fff" bgc="#b08d57" gp="0.5rem" wt="100%" bd="none" bdr="5px" />
+                        <ScaleFields params={active.params} onChange={handleInputChange(active.scaleId)} />
+                        <Btn btnName={active.loading ? <BtnSpinner /> : "Update Parameter"} handleClick={(e) => confirmUpdate(e, active)} p="0.8rem" fs="1rem" pr="1rem" col="#fff" bgc="#b08d57" gp="0.5rem" wt="100%" bd="none" bdr="5px" />
                     </form>
                 </div>
             )}
