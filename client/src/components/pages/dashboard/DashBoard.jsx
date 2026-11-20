@@ -26,9 +26,9 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
     const [showExp, setShowExp] = useState(true);
     const [isToggle, setIsToggle] = useState({ standard: false, straight: false });
     const [decimalSet, setDecimalSet] = useState(0);
-    const [weights, setWeights] = useState({ GATE_1: null, GATE_2: null });
-    const [decimalSets, setDecimalSets] = useState({ GATE_1: 0, GATE_2: 0 });
-    const [gate2Enabled, setGate2Enabled] = useState(false);
+    const [weights, setWeights] = useState({ GATE_1: null });
+    const [decimalSets, setDecimalSets] = useState({ GATE_1: 0 });
+    const [enabledScales, setEnabledScales] = useState(['GATE_1']);
     const [showStop, setShowStop] = useState(false);
     const [showTare, setShowTare] = useState(false);
     const wsRef = useRef(null); // WebSocket instance
@@ -37,6 +37,16 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
 
     const weight = weights.GATE_1;
     const setWeight = (v) => setWeights(prev => ({ ...prev, GATE_1: v }));
+    // More than one scale enabled: show the scale selector and the Scales line on tickets
+    const multiScale = enabledScales.length > 1;
+
+    // Set every scale we have seen to the same status value (used on error / disconnect / stop)
+    const resetWeights = (value) => setWeights(prev => {
+        const next = {};
+        Object.keys(prev).forEach(k => { next[k] = value; });
+        if (!next.GATE_1) next.GATE_1 = value;
+        return next;
+    });
     
 
         // ---------- WebSocket ----------
@@ -64,18 +74,18 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
                     // update only the scale that sent this message
                     setWeights(prev => prev[scaleId] === next ? prev : { ...prev, [scaleId]: next });
                 } catch (err) {
-                    setWeights({ GATE_1: "", GATE_2: "" });
+                    resetWeights("");
                 }
             };
 
             socket.onclose = () => {
                 console.log("WebSocket Disconnected");
-                setWeights({ GATE_1: "Not connected", GATE_2: "Not connected" });
+                resetWeights("Not connected");
                 wsRef.current = null;
             };
 
             socket.onerror = () => {
-                setWeights({ GATE_1: "Not connected", GATE_2: "Not connected" });
+                resetWeights("Not connected");
             };
     };
 
@@ -84,7 +94,7 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
             wsRef.current.close();
             wsRef.current = null;
         }
-        setWeights({ GATE_1: null, GATE_2: null });
+        resetWeights(null);
     };
  
     const handleDashToggle = ()=>{
@@ -160,17 +170,21 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
             setDecimalSet(adjustDecimal);
             setIsToggle({ standard: ptype === 'standard', straight: ptype === 'straight' });
 
-            // Is Gate 2 enabled? If so, load its own decimal setting too
+            // Which scales are enabled? Load each one's own decimal setting too
             const scales = await axios.get(`${BaseUrl}/scale`);
-            const g2 = (scales.data ?? []).find(c => c.scaleId === 'GATE_2');
+            const enabled = (scales.data ?? [])
+                .filter(c => c.enabled)
+                .map(c => c.scaleId)
+                .sort();
+            setEnabledScales(enabled.length ? enabled : ['GATE_1']);
 
-            if (g2?.enabled) {
-                setGate2Enabled(true);
-                const p2 = await axios.get(`${BaseUrl}/print-type`, { params: { scaleId: 'GATE_2' } });
-                setDecimalSets({ GATE_1: adjustDecimal, GATE_2: p2.data.adjustDecimal });
-            } else {
-                setDecimalSets({ GATE_1: adjustDecimal, GATE_2: adjustDecimal });
+            const sets = { GATE_1: adjustDecimal };
+            for (const id of enabled) {
+                if (id === 'GATE_1') continue;
+                const p = await axios.get(`${BaseUrl}/print-type`, { params: { scaleId: id } });
+                sets[id] = p.data.adjustDecimal;
             }
+            setDecimalSets(sets);
         } catch (error) {
             console.error("Error fetching print-type data", error);
         };
@@ -272,7 +286,8 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
                     startWebSocket={startWebSocket}
                     weights={weights}
                     decimalSets={decimalSets}
-                    gate2Enabled={gate2Enabled}
+                    enabledScales={enabledScales}
+                    multiScale={multiScale}
                     ticketField={ticketField}
                     setTicketField={setTicketField}
                 />
@@ -287,7 +302,7 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
                         user={user}
                         setIsToggle={setIsToggle}
                         isToggle={isToggle}   
-                        gate2Enabled={gate2Enabled}
+                        multiScale={multiScale}
 
                     />
                 </RequireRole>
