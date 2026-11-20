@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import useWebSocket from "./useWebSocket";
 import { BaseUrl } from "../../reuse/BaseUrl";
 
@@ -7,9 +8,9 @@ const ScaleReader = ({ wsUrl }) => {
 
   // 🔹 Fetch capacity & resolution ONCE
   useEffect(() => {
-    fetch(`${BaseUrl}/print-type`)
-      .then(res => res.json())
-      .then(data => {
+    axios.get(`${BaseUrl}/print-type`)
+      .then(res => {
+        const data = res.data;
         setScaleConfig({
           capacity: data.capacity,
           resolution: data.resolution,
