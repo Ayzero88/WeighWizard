@@ -57,6 +57,22 @@ public class UserController {
             .findFirst().map(a -> a.getAuthority()).orElse("");
     }
 
+    // Keep only known scale ids, stored comma-separated. Null or empty stays null (= all scales).
+    private String normalizeScales(String scales) {
+        if (scales == null || scales.isBlank()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String part : scales.split(",")) {
+            String id = part.trim();
+            if (id.equals("GATE_1") || id.equals("GATE_2") || id.equals("GATE_3") || id.equals("GATE_4")) {
+                if (sb.length() > 0) sb.append(",");
+                sb.append(id);
+            }
+        }
+        return sb.length() == 0 ? null : sb.toString();
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyAuthority('superadmin', 'admin')")
     public ResponseEntity<UserService> createUser(@RequestBody UserService user) {
@@ -66,6 +82,7 @@ public class UserController {
         if ("admin".equals(currentRole()) && "superadmin".equals(user.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins cannot create a superadmin");
         }
+        user.setAllowedScales(normalizeScales(user.getAllowedScales()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         UserService saved = repo.save(user);
         logAudit("CREATE_USER", currentUsername(), user.getUsername());
@@ -114,6 +131,10 @@ public class UserController {
 
         if (userDetails.getRole() != null) {
             existing.setRole(userDetails.getRole());
+        }
+
+        if (userDetails.getAllowedScales() != null) {
+            existing.setAllowedScales(normalizeScales(userDetails.getAllowedScales()));
         }
 
         UserService saved = repo.save(existing);
