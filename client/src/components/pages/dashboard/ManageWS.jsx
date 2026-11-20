@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const emptyWeights = { GATE_1: null, GATE_2: null };
+const emptyWeights = { GATE_1: null };
 
 const useWebSocket = ({ url, configs, capacity, resolution }) => {
   const [weights, setWeights] = useState(emptyWeights);
@@ -25,6 +25,15 @@ const useWebSocket = ({ url, configs, capacity, resolution }) => {
       prev[scaleId] === value ? prev : { ...prev, [scaleId]: value }
     );
   };
+
+  // Set every known scale to the same status text (used on error / disconnect)
+  const setAllWeights = (value) => setWeights(prev => {
+    const ids = new Set([...Object.keys(settingsRef.current.configs || {}), ...Object.keys(prev)]);
+    if (ids.size === 0) ids.add("GATE_1");
+    const next = {};
+    ids.forEach(id => { next[id] = value; });
+    return next;
+  });
 
   const stop = () => {
     shouldReconnectRef.current = false;
@@ -116,13 +125,13 @@ const useWebSocket = ({ url, configs, capacity, resolution }) => {
           }
         } catch (err) {
           console.error("Invalid WebSocket message:", event.data);
-          setWeights({ GATE_1: "Com err", GATE_2: "Com err" });
+          setAllWeights("Com err");
         }
       };
 
       socket.onclose = () => {
         console.log("WebSocket Disconnected");
-        setWeights({ GATE_1: "Disconnected", GATE_2: "Disconnected" });
+        setAllWeights("Disconnected");
 
         if (shouldReconnectRef.current) {
           if (reconnectTimeoutRef.current) {
