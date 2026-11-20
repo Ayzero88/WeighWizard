@@ -20,7 +20,7 @@ import com.weighwiz.weighwizbackend.db.UserRepository;
 
 import java.util.List;
 
-@Configuration
+@Configuration("webSecurityConfig")
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
