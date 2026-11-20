@@ -16,6 +16,8 @@ import com.weighwiz.weighwizbackend.db.DeletedTransaction;
 import com.weighwiz.weighwizbackend.db.DeletedTransactionRepository;
 import com.weighwiz.weighwizbackend.db.Transaction;
 import com.weighwiz.weighwizbackend.db.TransactionRepository;
+import com.weighwiz.weighwizbackend.db.UserRepository;
+import com.weighwiz.weighwizbackend.db.UserService;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -33,6 +35,7 @@ public class TransactionController {
 
     private final TransactionRepository repo;
     private final DeletedTransactionRepository deletedRepo;
+    private final UserRepository userRepo;
     
     private static final Logger logger = LoggerFactory.getLogger(TransactionController.class);
     // only accept the known scale ids; anything else is stored as null
@@ -40,10 +43,26 @@ public class TransactionController {
         return ("GATE_1".equals(s) || "GATE_2".equals(s) || "GATE_3".equals(s) || "GATE_4".equals(s)) ? s : null;
     }
 
+    // Per-user scale lock: the superadmin, and users with no restriction set, may use every scale.
+    private void checkScaleAllowed(String scaleId) {
+        if (scaleId == null) return;
+        UserService user = userRepo.findByUsername(currentUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "User not found"));
+        if ("superadmin".equals(user.getRole())) return;
+        String allowed = user.getAllowedScales();
+        if (allowed == null || allowed.isBlank()) return;
+        for (String part : allowed.split(",")) {
+            if (part.trim().equals(scaleId)) return;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to use this scale");
+    }
+
     public TransactionController(TransactionRepository repo,
-                             DeletedTransactionRepository deletedRepo) {
+                             DeletedTransactionRepository deletedRepo,
+                             UserRepository userRepo) {
         this.repo = repo;
         this.deletedRepo = deletedRepo;
+        this.userRepo = userRepo;
     }
     private String currentUsername() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -86,7 +105,10 @@ public class TransactionController {
         }
 
         tx.setScale1(cleanScale(tx.getScale1()));
-        tx.setScale2(cleanScale(tx.getScale2()));     
+        tx.setScale2(cleanScale(tx.getScale2()));
+
+        checkScaleAllowed(tx.getScale1());
+        checkScaleAllowed(tx.getScale2());
 
         return repo.save(tx);
     }
@@ -116,6 +138,7 @@ public class TransactionController {
         existing.setNwDate(tx.getNwDate() != null ? tx.getNwDate() : OffsetDateTime.now());
 
         String scale2 = cleanScale(tx.getScale2());
+        checkScaleAllowed(scale2);
         if (scale2 != null) existing.setScale2(scale2);
 
         repo.save(existing);
