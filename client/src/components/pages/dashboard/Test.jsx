@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { FaDumpster, FaWeight } from 'react-icons/fa';
 import Btn from '../../reuse/Btn';
 import { FiPlay, FiStopCircle } from 'react-icons/fi';
@@ -27,14 +28,14 @@ const Test = () => {
   // Fetch the enabled scales, then each one's capacity & resolution ONCE
 useEffect(() => {
     const load = async (scaleId) => {
-          const res = await fetch(`${BaseUrl}/print-type?scaleId=${scaleId}`);
-          const d = await res.json();
+          const res = await axios.get(`${BaseUrl}/print-type`, { params: { scaleId } });
+          const d = res.data;
           return { capacity: d.capacity, resolution: d.resolution };
     };
-    fetch(`${BaseUrl}/scale`)
-      .then(res => res.json())
-      .then(async configs => {
-        const enabled = (configs ?? [])
+    axios.get(`${BaseUrl}/scale`)
+      .then(async res => {
+        const configs = res.data;
+        const enabled = (Array.isArray(configs) ? configs : [])
           .filter(c => c.enabled)
           .map(c => c.scaleId)
           .sort();
