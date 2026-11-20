@@ -14,6 +14,7 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
         username: "",
         password: "",
         role: "",
+        allowedScales: "",
     });
     const [holdUsers, setHoldUsers] = useState([]);
     const [isEdit, setIsEdit] = useState(false);
@@ -30,6 +31,24 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
     const canManageUser = (ur) =>
         !!ur && ur.role !== "superadmin" && ur.id !== user?.id;
     const visibleUsers = users.filter(ur => canManageUser(ur));
+
+    // Per-user scale lock: the stored list is comma-separated; empty means every scale.
+    const allScales = ["GATE_1", "GATE_2", "GATE_3", "GATE_4"];
+    const scaleList = (value) => (value ? value.split(',').map(s => s.trim()).filter(Boolean) : []);
+    const isScaleChecked = (id) => {
+        const list = scaleList(usr.allowedScales);
+        return list.length === 0 || list.includes(id);
+    };
+    const toggleScale = (id) => {
+        const list = scaleList(usr.allowedScales);
+        const current = list.length === 0 ? [...allScales] : [...list];
+        const next = current.includes(id) ? current.filter(s => s !== id) : [...current, id].sort();
+        if (next.length === 0) {
+            showAlert("Pick at least one scale.", 'error');
+            return;
+        }
+        setUser(prev => ({ ...prev, allowedScales: next.length === allScales.length ? "" : next.join(',') }));
+    };
 
     const handleInputChange = (e)=>{
         const {name, value} = e.target;
@@ -52,7 +71,8 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
         const userProfile = {
             username: usr.username,
             password: usr.password,
-            role: usr.role
+            role: usr.role,
+            allowedScales: usr.allowedScales ?? ""
         }
 
         try {
@@ -68,7 +88,8 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
             setUser({
                 username: '',
                 password: '',
-                role: ''
+                role: '',
+                allowedScales: ''
             })
              setIsLoading(false);
         } catch (error) {
@@ -135,7 +156,8 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
         const userProfile = {
             username: usr.username,
             password: usr.password,
-            role: usr.role
+            role: usr.role,
+            allowedScales: usr.allowedScales ?? ""
         }
 
         try {
@@ -188,7 +210,8 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
         setUser({
             username: "",
             password: "",
-            role: ""
+            role: "",
+            allowedScales: ""
         });
         setIsEdit(false);
         setUsers(holdUsers);
@@ -221,6 +244,15 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
                     <option key={role} value={role}>{role === "admin" ? "Admin" : "Operator"}</option>
                 ))}
             </select>
+            <div className='allowed-scales'>
+                <p>Allowed scales</p>
+                {allScales.map(id => (
+                    <label key={id} style={{ marginRight: '0.8rem' }}>
+                        <input type='checkbox' checked={isScaleChecked(id)} onChange={() => toggleScale(id)} />
+                        {' '}Scale {id.replace('GATE_', '')}
+                    </label>
+                ))}
+            </div>
         </div>}
 
          {users.length > 0 && 
@@ -231,6 +263,7 @@ const CreateLogin = ({setDetails, showAlert, showConfirmAlert, user}) => {
         
                             <p><span>Name:</span> {ur.username}</p>
                             <p><span>Role:</span> {ur.role}</p>
+                            <p><span>Scales:</span> {ur.allowedScales ? scaleList(ur.allowedScales).map(s => 'Scale ' + s.replace('GATE_', '')).join(', ') : 'All'}</p>
                             <p><span>Id:</span> {ur.id}</p>
                             <Tooltip position='right' text='Update User'></Tooltip><p className='user-update-btn'><FiArrowUp cursor='pointer' onClick={()=>handleEdit(ur.id)}/></p>
                             <Tooltip position='right' text='Delete User'></Tooltip><p className='user-delete-btn'><FiTrash cursor='pointer'  onClick={()=>confirmDelete(ur)}/></p>
