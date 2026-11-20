@@ -35,9 +35,9 @@ public class TransactionController {
     private final DeletedTransactionRepository deletedRepo;
     
     private static final Logger logger = LoggerFactory.getLogger(TransactionController.class);
-    // only accept the two known scale ids; anything else is stored as null
+    // only accept the known scale ids; anything else is stored as null
     private String cleanScale(String s) {
-        return ("GATE_1".equals(s) || "GATE_2".equals(s)) ? s : null;
+        return ("GATE_1".equals(s) || "GATE_2".equals(s) || "GATE_3".equals(s) || "GATE_4".equals(s)) ? s : null;
     }
 
     public TransactionController(TransactionRepository repo,
