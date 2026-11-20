@@ -40,6 +40,17 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
     // More than one scale enabled: show the scale selector and the Scales line on tickets
     const multiScale = enabledScales.length > 1;
 
+    // Per-user scale lock: a restricted user only sees the scales on their allowed list.
+    // The superadmin, and anyone with no list set, sees every enabled scale.
+    const allowedList = (user?.allowedScales ?? '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+    const visibleScales = (user?.role === 'superadmin' || allowedList.length === 0)
+        ? enabledScales
+        : enabledScales.filter(id => allowedList.includes(id));
+    const captureMultiScale = visibleScales.length > 1;
+
     // Set every scale we have seen to the same status value (used on error / disconnect / stop)
     const resetWeights = (value) => setWeights(prev => {
         const next = {};
@@ -291,8 +302,8 @@ const DashBoard = ({homeComponent, setHomeComponent, content, setContent,  handl
                     startWebSocket={startWebSocket}
                     weights={weights}
                     decimalSets={decimalSets}
-                    enabledScales={enabledScales}
-                    multiScale={multiScale}
+                    enabledScales={visibleScales}
+                    multiScale={captureMultiScale}
                     ticketField={ticketField}
                     setTicketField={setTicketField}
                 />
