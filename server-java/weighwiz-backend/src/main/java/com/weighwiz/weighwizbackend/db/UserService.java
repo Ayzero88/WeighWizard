@@ -24,6 +24,10 @@ public class UserService {
     @Column(nullable = false)
     private String role;
 
+    // Comma-separated scale ids this user may weigh on, e.g. "GATE_1,GATE_3". Null or empty = all scales.
+    @Column(name = "allowed_scales")
+    private String allowedScales;
+
     @Column(name = "date_created", nullable = false, updatable = false)
     private OffsetDateTime dateCreated;
 
@@ -73,6 +77,14 @@ public class UserService {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getAllowedScales() {
+        return allowedScales;
+    }
+
+    public void setAllowedScales(String allowedScales) {
+        this.allowedScales = allowedScales;
     }
     
 }
