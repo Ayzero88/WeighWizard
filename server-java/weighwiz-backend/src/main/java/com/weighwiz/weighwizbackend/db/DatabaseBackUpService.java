@@ -36,6 +36,9 @@ public class DatabaseBackUpService {
     @Value("${backup.folder:./backups}")
     private String backupFolder;
 
+    @Value("${backup.retention.days:30}")
+    private int retentionDays;
+
     private String getDbName() {
         return dbUrl.substring(dbUrl.lastIndexOf("/") + 1);
     }
@@ -60,6 +63,7 @@ public String backupFullDatabase() throws IOException, InterruptedException {
             "-U", dbUser,
             "-d", getDbName(),
             "-F", "c",
+            "--exclude-table=scale_params",
             "-f", filePath
     );
 
@@ -89,9 +93,30 @@ public String backupFullDatabase() throws IOException, InterruptedException {
         throw new IOException("Full database backup failed, exit code=" + exitCode);
     }
 
+    cleanupOldBackups(fullDir);
+
     return fileName;
 
 }
+
+    // Delete backups older than the retention period so the folder does not grow forever
+    private void cleanupOldBackups(File fullDir) {
+        File[] files = fullDir.listFiles((dir, name) ->
+                name.startsWith("full_backup_") && name.endsWith(".dump")
+        );
+
+        if (files == null) {
+            return;
+        }
+
+        long cutoff = System.currentTimeMillis() - (long) retentionDays * 24 * 60 * 60 * 1000;
+
+        for (File file : files) {
+            if (file.lastModified() < cutoff && file.delete()) {
+                logger.info("Deleted old backup: {}", file.getName());
+            }
+        }
+    }
 
 public void restoreFullDatabase(String fileName)
         throws IOException, InterruptedException {
@@ -175,7 +200,6 @@ public List<String> getFullBackupFiles() {
 
 
  @Scheduled(cron = "${backup.schedule.cron:0 0 2 * * SUN}")
-//  @Scheduled(cron = "${backup.schedule.cron:*/5 * * * * *}")
     public void scheduledWeeklyBackup() {
         try {
             String result = backupFullDatabase();
