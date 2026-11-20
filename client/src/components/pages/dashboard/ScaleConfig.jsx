@@ -69,8 +69,8 @@ const ScaleConfig = ({showAlert, visibleScales}) => {
   }, []);
 
   // Per-user scale lock: only show the scales this user is allowed on
-    const shownScales = visibleScales ? scales.filter(s => visibleScales.includes(s.scaleId)) : scales;
-  
+  const shownScales = visibleScales ? scales.filter(s => visibleScales.includes(s.scaleId)) : scales;
+
   // With only one scale, titles drop the number (same as before)
   const multiScale = shownScales.length > 1;
 
