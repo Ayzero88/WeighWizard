@@ -167,9 +167,12 @@ public class DatabaseInitService {
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 role TEXT NOT NULL,
+                allowed_scales TEXT,
                 date_created TIMESTAMPTZ DEFAULT NOW()
             );
         """);
+        // Existing installs: add the per-user allowed-scale column if it is not there yet
+        jdbc.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS allowed_scales TEXT;");
 
         jdbc.execute("""
             CREATE TABLE IF NOT EXISTS audit_logs (
