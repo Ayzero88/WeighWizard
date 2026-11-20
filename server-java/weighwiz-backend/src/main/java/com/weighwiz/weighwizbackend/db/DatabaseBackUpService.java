@@ -39,6 +39,9 @@ public class DatabaseBackUpService {
     @Value("${backup.retention.days:30}")
     private int retentionDays;
 
+    @Value("${backup.copy.folder:}")
+    private String backupCopyFolder;
+
     private String getDbName() {
         return dbUrl.substring(dbUrl.lastIndexOf("/") + 1);
     }
@@ -93,6 +96,7 @@ public String backupFullDatabase() throws IOException, InterruptedException {
         throw new IOException("Full database backup failed, exit code=" + exitCode);
     }
 
+    copyBackupToSecondDrive(fullDir, fileName);
     cleanupOldBackups(fullDir);
 
     return fileName;
@@ -115,6 +119,31 @@ public String backupFullDatabase() throws IOException, InterruptedException {
             if (file.lastModified() < cutoff && file.delete()) {
                 logger.info("Deleted old backup: {}", file.getName());
             }
+        }
+    }
+
+    // Keep a second copy of each backup on another drive, when one is configured
+    private void copyBackupToSecondDrive(File fullDir, String fileName) {
+        if (backupCopyFolder == null || backupCopyFolder.isBlank()) {
+            return;
+        }
+
+        try {
+            File copyDir = new File(backupCopyFolder);
+            if (!copyDir.exists()) {
+                copyDir.mkdirs();
+            }
+
+            java.nio.file.Files.copy(
+                    new File(fullDir, fileName).toPath(),
+                    new File(copyDir, fileName).toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            );
+
+            logger.info("Backup copied to second drive: {}", fileName);
+            cleanupOldBackups(copyDir);
+        } catch (Exception e) {
+            logger.error("Copying backup to second drive FAILED", e);
         }
     }
 
