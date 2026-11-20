@@ -5,21 +5,21 @@ import DisplayInfo from '../../reuse/DisplayInfo';
 import FormatDateTime from '../../reuse/FormatDateTime';
 import { BaseUrl } from '../../reuse/BaseUrl';
 
-const DisplayT = ({ticketField, capturedParams, gate2Enabled}) => {
+const DisplayT = ({ticketField, capturedParams, multiScale}) => {
     const [owner, setOwner] = useState("");
     const [printType, setPrintType] = useState("");
     const [logo, setLogo] = useState(null);
 
     // which scale took the first and last weight (read from the saved ticket)
     const [scales, setScales] = useState({ first: "", last: "" });
-    // is the second scale enabled? starts from the prop, then confirmed from the backend
-    const [gate2On, setGate2On] = useState(!!gate2Enabled);
+    // is more than one scale enabled? starts from the prop, then confirmed from the backend
+    const [multiScaleOn, setMultiScaleOn] = useState(!!multiScale);
 
     const firstScale = scales.first;
     const lastScale = scales.last;
     const isStandard = ticketField?.opsType === "Standard";
 
-    const scaleLabel = (id) => id === 'GATE_1' ? 'Scale 1' : id === 'GATE_2' ? 'Scale 2' : '';
+    const scaleLabel = (id) => id ? 'Scale ' + id.replace('GATE_', '') : '';
     const firstLabel = isStandard ? 'First weight' : 'First capture';
     const lastLabel = isStandard ? 'Second weight' : 'Final capture';
 
@@ -42,12 +42,12 @@ const DisplayT = ({ticketField, capturedParams, gate2Enabled}) => {
             .catch(err => console.error(err));
     }, [ticketField?.tid]);
 
-    // only show the Scales line when the second scale is enabled
+    // only show the Scales line when more than one scale is enabled
     useEffect(() => {
         axios.get(`${BaseUrl}/scale`)
             .then(res => {
-                const g2 = (res.data ?? []).find(c => c.scaleId === 'GATE_2');
-                setGate2On(!!g2?.enabled);
+                const enabledCount = (res.data ?? []).filter(c => c.enabled).length;
+                setMultiScaleOn(enabledCount > 1);
             })
             .catch(err => console.error(err));
     }, []);
@@ -128,7 +128,7 @@ const DisplayT = ({ticketField, capturedParams, gate2Enabled}) => {
                         
                         {ticketField && ticketField?.batchNo &&  <p><span> <FaBarcode color='gray'/> Batch Number:</span> {ticketField.batchNo}</p>}
                             <p><span> <FaWeight color='gray'/> Weigh Operation:</span> {ticketField.opsType || "Scale"}</p>
-                            {gate2On && (firstScale || lastScale) && (
+                            {multiScaleOn && (firstScale || lastScale) && (
                                 <p>
                                     <span> <FaWeight color='gray'/> Scales:</span>{' '}
                                     {firstScale && `${firstLabel}: ${scaleLabel(firstScale)}`}
